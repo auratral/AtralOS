@@ -24,8 +24,8 @@
       <h2>HealthOS</h2>
       <p class="login-sub">Auratral Dataspace — Hospital Management</p>
       <div class="form-group">
-        <label>Username</label>
-        <input type="text" id="login-username" placeholder="Enter username" autocomplete="off">
+        <label>Email Address</label>
+        <input type="email" id="login-username" placeholder="user@atralos.com" autocomplete="on">
       </div>
       <div class="form-group">
         <label>Password</label>
@@ -33,6 +33,9 @@
       </div>
       <button class="btn-login" id="btn-login">Sign In</button>
       <div class="login-error" id="login-error-msg"></div>
+      <div style="margin-top: 15px; text-align: center;">
+        <a href="#" id="btn-bootstrap-db" style="font-size: 0.75rem; color: var(--primary); text-decoration: none; font-weight: 500;">⚙️ Bootstrap Database & Admin</a>
+      </div>
       <div class="login-footer">Secured with AES-GCM-256 · HIPAA / GDPR / DPDPA Compliant</div>
     </div>
   </div>
@@ -60,6 +63,10 @@
       <button class="topnav-settings-btn" id="btn-topnav-settings" onclick="navigateToSettings()">
         <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
         Settings
+      </button>
+      <button class="topnav-settings-btn" id="btn-topnav-logout" onclick="logoutFirebase()" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgb(239, 68, 68); color: rgb(239, 68, 68); display: inline-flex; align-items: center; gap: 4px;">
+        <svg viewBox="0 0 24 24" style="stroke: rgb(239, 68, 68); fill: none; stroke-width: 2; width: 14px; height: 14px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Sign Out
       </button>
       <div class="role-picker-container">
         <span class="role-picker-label">Interface:</span>

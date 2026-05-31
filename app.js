@@ -1,7 +1,93 @@
-import { ConvexClient } from "convex/browser";
-import { api } from "./convex/_generated/api";
+import { initializeApp } from "firebase/app";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "firebase/auth";
+import { getFirestore, doc, setDoc, addDoc, updateDoc, collection, onSnapshot, getDocs, getDoc, query, where, deleteDoc } from "firebase/firestore";
 
-const convex = new ConvexClient(import.meta.env.VITE_CONVEX_URL);
+const firebaseConfig = {
+  apiKey: "AIzaSyBViM31sQzeaZzSAUSevpaNuBbHSaFXHvk",
+  authDomain: "atralos.firebaseapp.com",
+  projectId: "atralos",
+  storageBucket: "atralos.firebasestorage.app",
+  messagingSenderId: "117722473031",
+  appId: "1:117722473031:web:30f9af23dac27bae880762",
+  measurementId: "G-YEEY8E2DWW"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Mock api object mimicking the Convex-generated API to preserve all call sites
+const api = {
+  db: {
+    // Queries
+    getPatients: "patients",
+    getAppointments: "appointments",
+    getClinicalRecords: "clinicalRecords",
+    getInvestigations: "investigations",
+    getBillingInvoices: "billingInvoices",
+    getAuditLogs: "auditLogs",
+    getStaffAccounts: "staffAccounts",
+    getVitals: "vitals",
+    getDevices: "devices",
+    getComplaints: "complaints",
+    getNotifications: "notifications",
+    
+    // Mutations
+    upsertPatient: "patients",
+    upsertAuditLog: "auditLogs",
+    upsertStaffAccount: "staffAccounts",
+    upsertAppointment: "appointments",
+    upsertVitals: "vitals",
+    upsertInvestigation: "investigations",
+    upsertClinicalRecord: "clinicalRecords",
+    upsertBillingInvoice: "billingInvoices",
+    upsertDevice: "devices",
+    upsertComplaint: "complaints",
+    upsertNotification: "notifications"
+  }
+};
+
+// Mock convex client redirecting queries/mutations to Cloud Firestore
+const convex = {
+  mutation: async (collectionName, data) => {
+    if (collectionName === "seedDatabases") {
+      // Legacy seeding call bypassed in favor of bootstrap database
+      return;
+    }
+    if (!data.id) {
+      const docRef = doc(collection(db, collectionName));
+      data.id = docRef.id;
+      await setDoc(docRef, data);
+    } else {
+      await setDoc(doc(db, collectionName, data.id), data, { merge: true });
+    }
+    return data.id;
+  },
+  
+  onUpdate: (collectionName, args, callback) => {
+    return onSnapshot(collection(db, collectionName), (snapshot) => {
+      const list = [];
+      snapshot.forEach(doc => {
+        list.push(doc.data());
+      });
+      callback(list);
+    });
+  }
+};
+
+// Admin staff registration helper avoiding Admin signout via secondary Firebase App
+async function registerUserWithFirebase(email, password) {
+  const tempApp = initializeApp(firebaseConfig, "TempApp_" + Date.now());
+  const tempAuth = getAuth(tempApp);
+  try {
+    const userCredential = await createUserWithEmailAndPassword(tempAuth, email, password);
+    await tempApp.delete();
+    return userCredential.user;
+  } catch (error) {
+    try { await tempApp.delete(); } catch(e) {}
+    throw error;
+  }
+}
 
 // ==========================================
 // PII CRYPTOGRAPHY SYSTEM (AES-GCM-256 Compliance)
@@ -401,61 +487,139 @@ function saveToLocalStorage() {
 
 let isInitialLoad = true;
 
-async function seedDatabaseFromDemo() {
-  showToast("Initializing cloud database with HIPAA/GDPR/DPDPA compliant seed data...", "info");
+window.bootstrapDatabase = async function() {
+  showToast("Bootstrapping database with HIPAA/GDPR/DPDPA compliant seed data...", "info");
   
-  const patientsSeed = [];
-  for (const p of SEED_PATIENTS) {
-    patientsSeed.push(await encryptPatient(p));
-  }
-  
-  const appointmentsSeed = SEED_APPOINTMENTS.map(a => ({
-    id: a.id,
-    patientId: a.patientId,
-    doctorId: a.doctorId,
-    type: a.type,
-    date: a.date,
-    time: a.time,
-    status: a.status,
-    token: a.token
-  }));
-  
-  const clinicalSeed = SEED_CLINICAL.map(c => ({
-    id: c.id,
-    patientId: c.patientId,
-    doctorId: c.doctorId,
-    doctorName: c.doctorName,
-    date: c.date,
-    s: c.s,
-    o: c.o,
-    a: c.a,
-    p: c.p,
-    medicines: c.medicines,
-    signed: c.signed,
-    signee: c.signee,
-    consentFlag: c.consentFlag
-  }));
-  
-  const investigationsSeed = SEED_INVESTIGATIONS.map(i => ({
-    id: i.id,
-    patientId: i.patientId,
-    doctorId: i.doctorId,
-    doctorName: i.doctorName,
-    type: i.type,
-    testName: i.testName,
-    refRange: i.refRange || "",
-    value: i.value || "",
-    urgency: i.urgency || "",
-    status: i.status,
-    date: i.date,
-    image: i.image || ""
-  }));
-  
-  const billingSeed = [];
-  const staffSeed = STAFF_ACCOUNTS;
-  
-  const auditsSeed = [
-    {
+  try {
+    // 1. Create Super Admin auth user in Firebase Auth
+    try {
+      await createUserWithEmailAndPassword(auth, "user@atralos.com", "Admin123");
+      showToast("Super Admin auth user created!");
+    } catch (authError) {
+      if (authError.code === "auth/email-already-in-use") {
+        showToast("Super Admin credentials verified.", "info");
+      } else {
+        throw authError;
+      }
+    }
+
+    // 2. Seed staffAccounts
+    for (const staff of STAFF_ACCOUNTS) {
+      const emailMap = {
+        STF001: "user@atralos.com",
+        STF002: "reception@atralos.com",
+        STF003: "nurse@atralos.com",
+        STF004: "lab@atralos.com",
+        STF005: "radiologist@atralos.com",
+        STF006: "pharmacist@atralos.com",
+        STF007: "finance@atralos.com"
+      };
+      const email = emailMap[staff.id] || `${staff.name.toLowerCase().replace(/\s+/g, '')}@atralos.com`;
+      await setDoc(doc(db, "staffAccounts", staff.id), {
+        ...staff,
+        email: email,
+        shift: "Morning",
+        workDays: "Mon,Tue,Wed,Thu,Fri",
+        qualification: staff.role.includes("Dr") || staff.role.includes("Radiologist") ? "MD" : "Diploma",
+        specialization: staff.dept,
+        phone: "9876543210",
+        leaveBalance: 15,
+        joiningDate: new Date().toISOString().split('T')[0]
+      });
+    }
+
+    // Also register doctors in staffAccounts list!
+    for (const docObj of DOCTORS) {
+      const docEmail = `${docObj.id.toLowerCase()}@atralos.com`;
+      await setDoc(doc(db, "staffAccounts", docObj.id), {
+        id: docObj.id,
+        name: docObj.name,
+        role: "Doctor",
+        dept: docObj.dept,
+        license: docObj.license,
+        email: docEmail,
+        status: 'Active',
+        shift: "Morning",
+        workDays: "Mon,Tue,Wed,Thu,Fri",
+        qualification: "MD",
+        specialization: docObj.dept,
+        phone: "9876543210",
+        leaveBalance: 15,
+        joiningDate: new Date().toISOString().split('T')[0]
+      });
+      // Try creating their Firebase Auth account
+      try {
+        await registerUserWithFirebase(docEmail, "Staff123!");
+      } catch (e) {
+        if (e.code !== "auth/email-already-in-use") {
+          console.warn("Could not register doctor auth:", docEmail, e);
+        }
+      }
+    }
+
+    // Register all default staff auth accounts
+    const defaultStaffAuths = [
+      { email: "reception@atralos.com", pass: "Staff123!" },
+      { email: "nurse@atralos.com", pass: "Staff123!" },
+      { email: "lab@atralos.com", pass: "Staff123!" },
+      { email: "radiologist@atralos.com", pass: "Staff123!" },
+      { email: "pharmacist@atralos.com", pass: "Staff123!" },
+      { email: "finance@atralos.com", pass: "Staff123!" }
+    ];
+    for (const authUser of defaultStaffAuths) {
+      try {
+        await registerUserWithFirebase(authUser.email, authUser.pass);
+      } catch (e) {
+        if (e.code !== "auth/email-already-in-use") {
+          console.warn("Could not register staff auth:", authUser.email, e);
+        }
+      }
+    }
+
+    // Seed patients (PII is encrypted client-side)
+    for (const p of SEED_PATIENTS) {
+      const enc = await encryptPatient(p);
+      await setDoc(doc(db, "patients", p.id), enc);
+    }
+
+    // Seed appointments (with department mapped)
+    for (const a of SEED_APPOINTMENTS) {
+      const docObj = DOCTORS.find(d => d.id === a.doctorId);
+      const dept = docObj ? docObj.dept : "General";
+      await setDoc(doc(db, "appointments", a.id), {
+        ...a,
+        department: dept,
+        investigationStatus: a.investigationStatus || "None"
+      });
+    }
+
+    // Seed clinical records
+    for (const c of SEED_CLINICAL) {
+      await setDoc(doc(db, "clinicalRecords", c.id), c);
+    }
+
+    // Seed investigations
+    for (const i of SEED_INVESTIGATIONS) {
+      await setDoc(doc(db, "investigations", i.id), i);
+    }
+
+    // Seed vitals
+    for (const v of SEED_VITALS) {
+      await setDoc(doc(db, "vitals", v.id), v);
+    }
+
+    // Seed devices
+    for (const d of SEED_DEVICES) {
+      await setDoc(doc(db, "devices", d.id), d);
+    }
+
+    // Seed complaints
+    for (const c of SEED_COMPLAINTS) {
+      await setDoc(doc(db, "complaints", c.id), c);
+    }
+
+    // Seed initial audit log
+    const auditLog = {
       id: 'LOG-INIT',
       timestamp: new Date().toISOString(),
       userRole: 'Super Admin',
@@ -463,27 +627,25 @@ async function seedDatabaseFromDemo() {
       userName: 'Dr. Vikram Aditya',
       actionType: 'Create',
       recordId: 'SYS',
-      description: 'Cloud database initialized with secure, GDPR/HIPAA compliant schema',
+      description: 'Firebase Firestore database initialized with secure seed data & default auth credentials',
       device: 'Chrome/Win10'
-    }
-  ];
+    };
+    await setDoc(doc(db, "auditLogs", auditLog.id), auditLog);
 
-  try {
-    await convex.mutation(api.db.seedDatabases, {
-      patients: patientsSeed,
-      appointments: appointmentsSeed,
-      clinicalRecords: clinicalSeed,
-      investigations: investigationsSeed,
-      billingInvoices: billingSeed,
-      staffAccounts: staffSeed,
-      auditLogs: auditsSeed,
-      vitals: SEED_VITALS
-    });
-    showToast("Cloud database seeded successfully!");
+    showToast("Firebase Database bootstrapped successfully!", "success");
+    
+    // Automatically attempt log in if not logged in
+    if (!auth.currentUser) {
+      await signInWithEmailAndPassword(auth, "user@atralos.com", "Admin123");
+    }
   } catch (error) {
-    console.error("Seeding failed:", error);
-    showToast("Database seeding failed", "error");
+    console.error("Bootstrapping failed:", error);
+    showToast("Database seeding failed: " + error.message, "error");
   }
+};
+
+async function seedDatabaseFromDemo() {
+  await window.bootstrapDatabase();
 }
 
 function loadFromStorage() {
@@ -832,47 +994,66 @@ document.getElementById('btn-add-staff').addEventListener('click', () => {
 });
 
 // Confirm add new staff member
-document.getElementById('btn-confirm-add-staff').addEventListener('click', () => {
+document.getElementById('btn-confirm-add-staff').addEventListener('click', async () => {
   const name = document.getElementById('new-staff-name').value.trim();
   const dept = document.getElementById('new-staff-dept').value;
   const role = document.getElementById('new-staff-role').value;
   const license = document.getElementById('new-staff-license').value.trim();
+  const email = document.getElementById('new-staff-email').value.trim();
   
-  if (!name || !license) {
-    showToast('Please fill in Name and License ID.', 'error');
+  if (!name || !license || !email) {
+    showToast('Please fill in Name, License ID, and Email Address.', 'error');
     return;
   }
   
-  const newId = 'STF' + String(STAFF_ACCOUNTS.length + 1).padStart(3, '0');
-  const newStaff = {
-    id: newId,
-    name: name,
-    role: role,
-    dept: dept,
-    license: license,
-    status: 'Active'
-  };
+  let newId;
+  if (role.toLowerCase().includes('doctor')) {
+    newId = 'DOC' + String(STAFF_ACCOUNTS.filter(s => s.role.toLowerCase().includes('doctor')).length + 5).padStart(3, '0');
+  } else {
+    newId = 'STF' + String(STAFF_ACCOUNTS.filter(s => !s.role.toLowerCase().includes('doctor')).length + 8).padStart(3, '0');
+  }
+  const defaultPass = 'Staff123!';
   
-  convex.mutation(api.db.upsertStaffAccount, newStaff)
-    .then(() => {
-      logAudit('Create', newId, `New staff account created: ${name} (${role}, ${dept})`);
-      showToast(`Staff account created for ${name}!`);
-    })
-    .catch(err => {
-      console.error(err);
-      showToast("Error creating staff account: " + err.message, "error");
-    });
+  showToast("Creating user authentication account...", "info");
   
-  // Clear form
-  document.getElementById('new-staff-name').value = '';
-  document.getElementById('new-staff-license').value = '';
-  document.getElementById('new-staff-email').value = '';
-  document.getElementById('admin-staff-create-form').style.display = 'none';
-  
-  renderAdminStaff();
-  document.getElementById('admin-stat-staff').textContent = STAFF_ACCOUNTS.length;
-  logAudit('Create', newId, `New staff account created: ${name} (${role}, ${dept})`);
-  showToast(`Staff account created for ${name}!`);
+  try {
+    // 1. Create auth user credentials in Firebase Auth
+    await registerUserWithFirebase(email, defaultPass);
+    
+    // 2. Save staff profile document to Firestore
+    const newStaff = {
+      id: newId,
+      name: name,
+      role: role,
+      dept: dept,
+      license: license,
+      email: email,
+      status: 'Active',
+      shift: "Morning",
+      workDays: "Mon,Tue,Wed,Thu,Fri",
+      qualification: role.includes("Dr") ? "MD" : "Diploma",
+      specialization: dept,
+      phone: "9876543210",
+      leaveBalance: 15,
+      joiningDate: new Date().toISOString().split('T')[0]
+    };
+    
+    await setDoc(doc(db, "staffAccounts", newId), newStaff);
+    
+    logAudit('Create', newId, `New staff account created: ${name} (${role}, ${dept}, email: ${email})`);
+    showToast(`Staff account created for ${name}! Default password is: ${defaultPass}`, "success");
+    
+    // Clear form
+    document.getElementById('new-staff-name').value = '';
+    document.getElementById('new-staff-license').value = '';
+    document.getElementById('new-staff-email').value = '';
+    document.getElementById('admin-staff-create-form').style.display = 'none';
+    
+    renderAdminStaff();
+  } catch (err) {
+    console.error(err);
+    showToast("Error creating staff account: " + err.message, "error");
+  }
 });
 
 // Stat card click handler
@@ -1221,8 +1402,15 @@ function renderNursingQueue() {
   const list = document.getElementById('nursing-patient-list');
   list.innerHTML = '';
   
-  // Show BOTH checked-in patients (new vitals) AND results-ready patients (returning)
-  const waitingApts = STATE.appointments.filter(a => a.status === 'Checked In' || a.status === 'Results Ready');
+  let waitingApts = STATE.appointments.filter(a => a.status === 'Checked In' || a.status === 'Results Ready');
+  
+  // Department-level filtering for nurses
+  if (STATE.currentUserProfile && STATE.currentUserProfile.role.toLowerCase().includes("nurs") && STATE.currentUserProfile.dept) {
+    const nurseDept = STATE.currentUserProfile.dept.toLowerCase();
+    if (nurseDept !== "nursing care" && nurseDept !== "general" && nurseDept !== "management") {
+      waitingApts = waitingApts.filter(a => a.department && a.department.toLowerCase().includes(nurseDept));
+    }
+  }
   
   if (waitingApts.length === 0) {
     list.innerHTML = `<p style="padding:20px; text-align:center; color:var(--text-2);">No patients currently waiting at vitals station.</p>`;
@@ -1397,8 +1585,12 @@ function renderDoctorQueue() {
   const list = document.getElementById('doctor-patient-list');
   list.innerHTML = '';
   
-  // Find patients with Active Consultations (new + returning with results)
-  const activeApts = STATE.appointments.filter(a => a.status === 'In Consultation');
+  let activeApts = STATE.appointments.filter(a => a.status === 'In Consultation');
+  
+  // Doctor filtering: only show patients assigned to this doctor
+  if (STATE.currentUserProfile && STATE.currentUserProfile.role.toLowerCase().includes("doctor")) {
+    activeApts = activeApts.filter(a => a.doctorId === STATE.currentUserProfile.id);
+  }
   
   if (activeApts.length === 0) {
     list.innerHTML = `<p style="padding:20px; text-align:center; color:var(--text-2);">No patients waiting in consult room queue.</p>`;
@@ -3108,34 +3300,62 @@ function handleGlobalSearchSelection(pId) {
 
 function initLogin() {
   const loginBtn = document.getElementById('btn-login');
-  const usernameInput = document.getElementById('login-username');
+  const emailInput = document.getElementById('login-username');
   const passwordInput = document.getElementById('login-password');
   const errorMsg = document.getElementById('login-error-msg');
+  const bootstrapBtn = document.getElementById('btn-bootstrap-db');
 
-  function attemptLogin() {
-    const user = usernameInput.value.trim();
+  if (bootstrapBtn) {
+    bootstrapBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.bootstrapDatabase();
+    });
+  }
+
+  async function attemptLogin() {
+    const email = emailInput.value.trim();
     const pass = passwordInput.value;
-    if (user === 'User' && pass === 'Admin123') {
-      document.getElementById('login-overlay').style.display = 'none';
-      document.getElementById('topnav').style.display = 'flex';
-      document.getElementById('main-content').style.display = 'block';
+    
+    if (!email || !pass) {
+      errorMsg.textContent = 'Please enter both email and password.';
+      return;
+    }
+    
+    try {
+      errorMsg.textContent = 'Signing in...';
+      await signInWithEmailAndPassword(auth, email, pass);
       errorMsg.textContent = '';
-      showToast('Welcome to HealthOS!');
-      logAudit('View', 'SYS', 'User logged in successfully');
-    } else {
-      errorMsg.textContent = 'Invalid credentials. Use User / Admin123';
-      usernameInput.focus();
+    } catch (error) {
+      console.error(error);
+      errorMsg.textContent = 'Login failed: ' + error.message;
     }
   }
 
-  loginBtn.addEventListener('click', attemptLogin);
-  passwordInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') attemptLogin();
-  });
-  usernameInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') passwordInput.focus();
-  });
+  if (loginBtn) {
+    loginBtn.addEventListener('click', attemptLogin);
+  }
+  if (passwordInput) {
+    passwordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') attemptLogin();
+    });
+  }
+  if (emailInput) {
+    emailInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') passwordInput.focus();
+    });
+  }
 }
+
+// Global Firebase Logout Handler
+window.logoutFirebase = async function() {
+  try {
+    await signOut(auth);
+    showToast("Signed out successfully!");
+  } catch (err) {
+    console.error(err);
+    showToast("Error signing out: " + err.message, "error");
+  }
+};
 
 // ==========================================
 // 17. WEBCAM PHOTO CAPTURE
@@ -3375,7 +3595,18 @@ function renderBedGrid() {
   const grid = document.getElementById('bed-management-grid');
   if (!grid) return;
   
-  grid.innerHTML = BED_DATA.map(bed => {
+  let filteredBeds = BED_DATA;
+  if (STATE.currentUserProfile && STATE.currentUserProfile.role.toLowerCase().includes("nurs") && STATE.currentUserProfile.dept) {
+    const dept = STATE.currentUserProfile.dept.toLowerCase();
+    if (dept !== "nursing care" && dept !== "general" && dept !== "management") {
+      filteredBeds = BED_DATA.filter(bed => {
+        const ward = bed.ward.toLowerCase();
+        return dept.includes(ward) || ward.includes(dept);
+      });
+    }
+  }
+
+  grid.innerHTML = filteredBeds.map(bed => {
     const colorMap = { available: 'var(--success-bg)', occupied: 'rgba(37,99,235,.08)', cleaning: 'var(--warning-bg)' };
     const borderMap = { available: 'var(--success)', occupied: 'var(--info)', cleaning: 'var(--warning)' };
     const patient = bed.patient ? STATE.patients.find(p => p.id === bed.patient) : null;
@@ -4039,9 +4270,99 @@ window.closeComplaintDetail = function() {
 window.addEventListener('DOMContentLoaded', async () => {
   await initPiiCrypto();
   initLogin();
-  loadFromStorage();
-  initRouter();
-  initGlobalSearch();
-  initInvestigationChips();
+  
+  // Register Auth Listener
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      STATE.isAuthenticated = true;
+      
+      try {
+        const q = query(collection(db, "staffAccounts"), where("email", "==", user.email));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const staffDoc = querySnapshot.docs[0].data();
+          STATE.currentUserProfile = staffDoc;
+          
+          let targetRole = staffDoc.role.toLowerCase();
+          if (targetRole.includes("admin")) {
+            STATE.activeRole = "admin";
+          } else if (targetRole.includes("reception")) {
+            STATE.activeRole = "reception";
+          } else if (targetRole.includes("nurse") || targetRole.includes("nursing")) {
+            STATE.activeRole = "nursing";
+          } else if (targetRole.includes("doctor")) {
+            STATE.activeRole = "doctor";
+          } else if (targetRole.includes("lab") || targetRole.includes("pathology")) {
+            STATE.activeRole = "lab";
+          } else if (targetRole.includes("radio") || targetRole.includes("image")) {
+            STATE.activeRole = "radiology";
+          } else if (targetRole.includes("pharmac")) {
+            STATE.activeRole = "pharmacy";
+          } else if (targetRole.includes("finance") || targetRole.includes("bill")) {
+            STATE.activeRole = "finance";
+          } else {
+            STATE.activeRole = "patient";
+          }
+          STATE.activePanel = ROLE_NAV_CONFIGS[STATE.activeRole][0].id;
+        } else {
+          // Fallback if not found in staffAccounts (e.g. if we created an auth user but no database document yet)
+          console.warn("No staff account record found in Firestore for email:", user.email);
+          STATE.currentUserProfile = { name: user.email, role: 'Super Admin', email: user.email, dept: 'Management' };
+          STATE.activeRole = "admin";
+          STATE.activePanel = "admin";
+        }
+      } catch (err) {
+        console.error("Error loading user profile:", err);
+        STATE.currentUserProfile = { name: user.email, role: 'Super Admin', email: user.email, dept: 'Management' };
+        STATE.activeRole = "admin";
+        STATE.activePanel = "admin";
+      }
+
+      // Update Topnav profile UI
+      const nameEl = document.getElementById('user-display-name');
+      const roleEl = document.getElementById('user-role-display');
+      const avatarEl = document.getElementById('user-avatar-initials');
+      const selectEl = document.getElementById('global-role-select');
+      const selectContainer = document.querySelector('.role-picker-container');
+      
+      if (nameEl) nameEl.textContent = STATE.currentUserProfile.name;
+      if (roleEl) roleEl.textContent = `${STATE.currentUserProfile.role} (${STATE.currentUserProfile.dept || 'No Dept'})`;
+      if (avatarEl) {
+        const initials = STATE.currentUserProfile.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        avatarEl.textContent = initials;
+      }
+      if (selectEl) selectEl.value = STATE.activeRole;
+      
+      // Restrict role select dropdown to Super Admins only
+      if (selectContainer) {
+        if (STATE.currentUserProfile.role === 'Super Admin') {
+          selectContainer.style.display = 'block';
+        } else {
+          selectContainer.style.display = 'none';
+        }
+      }
+
+      // Hide login, show main workspace
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('topnav').style.display = 'flex';
+      document.getElementById('main-content').style.display = 'block';
+
+      // Load Firestore real-time subscriptions, routing, search & chips
+      loadFromStorage();
+      initRouter();
+      initGlobalSearch();
+      initInvestigationChips();
+
+      logAudit('View', 'SYS', `Staff ${user.email} signed in successfully`);
+      showToast(`Welcome back, ${STATE.currentUserProfile.name}!`);
+    } else {
+      STATE.isAuthenticated = false;
+      STATE.currentUserProfile = null;
+      document.getElementById('login-overlay').style.display = 'flex';
+      document.getElementById('topnav').style.display = 'none';
+      document.getElementById('main-content').style.display = 'none';
+    }
+  });
 });
 

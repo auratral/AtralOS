@@ -11,6 +11,6 @@
     "vite": "^5.2.0"
   },
   "dependencies": {
-    "convex": "^1.39.1"
+    "firebase": "^10.12.0"
   }
 }
