@@ -31,6 +31,8 @@ jobs:
         
       - name: Build with Vite
         run: npm run build
+        env:
+          VITE_CONVEX_URL: "http://127.0.0.1:3210"
         
       - name: Setup Pages
         uses: actions/configure-pages@v4
