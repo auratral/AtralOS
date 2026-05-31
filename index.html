@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auratral HealthOS — Hospital EHR & Data Management</title>
+  <meta name="description" content="Auratral HealthOS: Multi-tenant, role-based Hospital EHR with ABDM compliance, HIPAA/GDPR/DPDPA encryption, and real-time clinical workflows.">
+  <link rel="stylesheet" href="index.css">
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      var div = document.createElement('div');
+      div.style = "position:fixed;top:0;left:0;width:100%;background:#dc2626;color:#fff;padding:14px 20px;z-index:99999;font-family:monospace;font-size:12px;box-shadow:0 4px 10px rgba(0,0,0,.5)";
+      div.innerHTML = '<b>JS Error:</b> ' + msg + '<br>at ' + url + ':' + line;
+      document.body.appendChild(div);
+    };
+  </script>
+</head>
+<body>
+
+  <!-- ========== LOGIN OVERLAY ========== -->
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-card">
+      <div class="login-logo">A</div>
+      <h2>HealthOS</h2>
+      <p class="login-sub">Auratral Dataspace — Hospital Management</p>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="login-username" placeholder="Enter username" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Enter password">
+      </div>
+      <button class="btn-login" id="btn-login">Sign In</button>
+      <div class="login-error" id="login-error-msg"></div>
+      <div class="login-footer">Secured with AES-GCM-256 · HIPAA / GDPR / DPDPA Compliant</div>
+    </div>
+  </div>
+
+  <!-- ========== TOP NAVIGATION ========== -->
+  <nav class="topnav" id="topnav" style="display:none">
+    <div class="topnav-brand">
+      <div class="logo-icon">A</div>
+      <div class="logo-text">
+        <span class="logo-title">HealthOS</span>
+        <span class="logo-subtitle">Auratral Dataspace</span>
+      </div>
+    </div>
+    <div class="topnav-controls">
+      <div class="search-wrapper" id="global-search-container">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" class="search-input" id="global-patient-search" placeholder="Search patient..." autocomplete="off">
+        <div class="autocomplete-dropdown" id="global-search-results" style="display:none"></div>
+      </div>
+      <div class="notification-bell" id="notification-bell" onclick="toggleNotifications()">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        <span class="notification-count" id="notification-count">0</span>
+        <div class="notification-dropdown" id="notification-dropdown"></div>
+      </div>
+      <button class="topnav-settings-btn" id="btn-topnav-settings" onclick="navigateToSettings()">
+        <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        Settings
+      </button>
+      <div class="role-picker-container">
+        <span class="role-picker-label">Interface:</span>
+        <select class="role-select" id="global-role-select">
+          <option value="admin">Super Admin</option>
+          <option value="reception">Reception</option>
+          <option value="nursing">Nursing</option>
+          <option value="doctor">Doctor</option>
+          <option value="lab">Laboratory</option>
+          <option value="radiology">Radiology</option>
+          <option value="pharmacy">Pharmacy</option>
+          <option value="finance">Finance & Billing</option>
+          <option value="patient">Patient Portal</option>
+        </select>
+      </div>
+      <div class="user-profile-widget">
+        <div class="user-avatar" id="user-avatar-initials">SA</div>
+        <div class="user-info">
+          <span class="user-name" id="user-display-name">Dr. Vikram Aditya</span>
+          <span class="user-role-badge" id="user-role-display">Super Admin</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <div class="main-content" id="main-content" style="display:none">
+    <div class="page-header">
+      <h1 class="page-title" id="current-panel-title">Dashboard</h1>
+      <p class="page-subtitle" id="current-panel-subtitle">Overview</p>
+    </div>
+
+    <!-- ====== 1. SUPER ADMIN PANEL ====== -->
+    <div class="role-panel" id="role-panel-admin" style="display:none">
+      <!-- Stats Row -->
+      <div class="stats-grid">
+        <div class="glass-card stat-card" onclick="showStatDetail('patients')">
+          <div class="stat-details"><span class="stat-label">Patients</span><span class="stat-val" id="admin-stat-patients">0</span><span class="stat-change">Registered</span></div>
+          <div class="stat-icon-wrapper"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg></div>
+        </div>
+        <div class="glass-card stat-card" onclick="showStatDetail('staff')">
+          <div class="stat-details"><span class="stat-label">Staff</span><span class="stat-val" id="admin-stat-staff">0</span><span class="stat-change">Active accounts</span></div>
+          <div class="stat-icon-wrapper"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+        </div>
+        <div class="glass-card stat-card" onclick="showStatDetail('devices')">
+          <div class="stat-details"><span class="stat-label">Devices</span><span class="stat-val" id="admin-stat-devices">0</span><span class="stat-change">Equipment tracked</span></div>
+          <div class="stat-icon-wrapper" style="color:#0284c7"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg></div>
+        </div>
+        <div class="glass-card stat-card" onclick="showStatDetail('complaints')">
+          <div class="stat-details"><span class="stat-label">Open Tickets</span><span class="stat-val" id="admin-stat-complaints">0</span><span class="stat-change down">Needs attention</span></div>
+          <div class="stat-icon-wrapper" style="color:var(--warning)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div>
+        </div>
+        <div class="glass-card stat-card" onclick="showStatDetail('abha')">
+          <div class="stat-details"><span class="stat-label">ABHA Rate</span><span class="stat-val" id="admin-stat-abha">0%</span><span class="stat-change">Target ≥80%</span></div>
+          <div class="stat-icon-wrapper" style="color:#0284c7"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
+        </div>
+      </div>
+
+      <!-- Stat Detail Panel -->
+      <div class="glass-card" id="admin-stat-detail-panel" style="display:none;margin-bottom:16px">
+        <div class="flex-between" style="margin-bottom:10px">
+          <h3 class="form-title" style="margin:0;padding:0;border:none" id="stat-detail-title">Detail</h3>
+          <button class="glass-btn glass-btn-secondary" style="padding:3px 10px" onclick="document.getElementById('admin-stat-detail-panel').style.display='none'">✕</button>
+        </div>
+        <div id="stat-detail-content"></div>
+      </div>
+
+      <!-- Department Cards -->
+      <div class="glass-card" style="margin-bottom:16px" id="admin-dept-section">
+        <h3 class="form-title">Department Overview</h3>
+        <div class="dept-cards-grid" id="admin-dept-cards-grid"><!-- JS --></div>
+      </div>
+
+      <!-- Staff Management -->
+      <div class="glass-card" style="margin-bottom:16px">
+        <div class="flex-between" style="margin-bottom:12px">
+          <h3 class="form-title" style="margin:0;padding:0;border:none">Staff Management</h3>
+          <button class="glass-btn glass-btn-primary" id="btn-add-staff">+ Add Staff</button>
+        </div>
+        <div id="admin-staff-create-form" style="display:none;margin-bottom:14px;padding:14px;background:var(--bg);border-radius:var(--radius-md);border:1px solid var(--border)">
+          <h4 style="font-size:0.85rem;margin-bottom:10px">New Staff Account</h4>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:10px">
+            <div class="form-group"><label>Full Name *</label><input type="text" id="new-staff-name" placeholder="Dr. Priya Sharma"></div>
+            <div class="form-group"><label>Department *</label><select id="new-staff-dept"><option>General Medicine</option><option>Cardiology</option><option>Orthopedics</option><option>Pediatrics</option><option>Radiology</option><option>Pathology</option><option>Nursing</option><option>Pharmacy</option><option>Finance</option><option>Administration</option></select></div>
+            <div class="form-group"><label>Role *</label><select id="new-staff-role"><option>Consultant</option><option>Senior Resident</option><option>Junior Resident</option><option>Nurse</option><option>Lab Technician</option><option>Radiologist</option><option>Pharmacist</option><option>Billing Clerk</option><option>Receptionist</option><option>Admin</option></select></div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:10px">
+            <div class="form-group"><label>License ID *</label><input type="text" id="new-staff-license" placeholder="MCI-XXXXXX"></div>
+            <div class="form-group"><label>Email</label><input type="email" id="new-staff-email" placeholder="name@hospital.in"></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="glass-btn glass-btn-primary" id="btn-confirm-add-staff">Create Account</button>
+            <button class="glass-btn glass-btn-secondary" onclick="document.getElementById('admin-staff-create-form').style.display='none'">Cancel</button>
+          </div>
+        </div>
+        <div class="table-wrapper"><table class="ehr-table"><thead><tr><th>Staff Name</th><th>Dept / Role</th><th>License</th><th>Status</th><th>Action</th></tr></thead><tbody id="admin-staff-table-body"></tbody></table></div>
+      </div>
+
+      <!-- Devices & Equipment -->
+      <div class="glass-card" style="margin-bottom:16px">
+        <div class="flex-between" style="margin-bottom:12px">
+          <h3 class="form-title" style="margin:0;padding:0;border:none">Devices & Equipment</h3>
+          <button class="glass-btn glass-btn-primary" id="btn-add-device">+ Add Device</button>
+        </div>
+        <div id="admin-device-create-form" style="display:none;margin-bottom:14px;padding:14px;background:var(--bg);border-radius:var(--radius-md);border:1px solid var(--border)">
+          <h4 style="font-size:0.85rem;margin-bottom:10px">Register New Device</h4>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:10px">
+            <div class="form-group"><label>Device Name *</label><input type="text" id="new-device-name" placeholder="Philips Monitor"></div>
+            <div class="form-group"><label>Type *</label><select id="new-device-type"><option>Monitor</option><option>Ventilator</option><option>ECG</option><option>X-Ray</option><option>MRI</option><option>CT Scanner</option><option>Ultrasound</option><option>Defibrillator</option><option>Infusion Pump</option><option>Analyzer</option><option>Autoclave</option><option>Other</option></select></div>
+            <div class="form-group"><label>Department *</label><select id="new-device-dept"><option>ICU</option><option>Cardiology</option><option>Radiology</option><option>Pathology</option><option>Emergency</option><option>Ward A</option><option>Ward B</option><option>CSSD</option><option>OB-GYN</option><option>Pharmacy</option></select></div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:10px">
+            <div class="form-group"><label>Serial Number</label><input type="text" id="new-device-serial" placeholder="SN-XXXXXX"></div>
+            <div class="form-group"><label>Location</label><input type="text" id="new-device-location" placeholder="Room 3"></div>
+            <div class="form-group"><label>Status</label><select id="new-device-status"><option>Active</option><option>Under Maintenance</option><option>Decommissioned</option></select></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="glass-btn glass-btn-primary" id="btn-confirm-add-device">Register Device</button>
+            <button class="glass-btn glass-btn-secondary" onclick="document.getElementById('admin-device-create-form').style.display='none'">Cancel</button>
+          </div>
+        </div>
+        <div class="table-wrapper"><table class="ehr-table"><thead><tr><th>Device</th><th>Type</th><th>Location</th><th>Status</th><th>Maintenance Due</th><th>Action</th></tr></thead><tbody id="admin-devices-table-body"></tbody></table></div>
+      </div>
+
+      <!-- Complaints & Tickets -->
+      <div class="glass-card" style="margin-bottom:16px">
+        <div class="flex-between" style="margin-bottom:12px">
+          <h3 class="form-title" style="margin:0;padding:0;border:none">Complaint Tickets</h3>
+          <button class="glass-btn glass-btn-primary" id="btn-add-complaint">+ New Ticket</button>
+        </div>
+        <div id="admin-complaint-create-form" style="display:none;margin-bottom:14px;padding:14px;background:var(--bg);border-radius:var(--radius-md);border:1px solid var(--border)">
+          <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:10px">
+            <div class="form-group"><label>Title *</label><input type="text" id="new-complaint-title" placeholder="Brief description"></div>
+            <div class="form-group"><label>Category</label><select id="new-complaint-category"><option>Device Malfunction</option><option>Infrastructure</option><option>IT/Software</option><option>Staffing/Supply</option><option>Hygiene</option><option>Other</option></select></div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:10px">
+            <div class="form-group"><label>Department</label><select id="new-complaint-dept"><option>Cardiology</option><option>Radiology</option><option>Pathology</option><option>Nursing</option><option>Pharmacy</option><option>Billing</option><option>Reception</option><option>ICU</option><option>Emergency</option></select></div>
+            <div class="form-group"><label>Priority</label><select id="new-complaint-priority"><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></div>
+            <div class="form-group"><label>Assign To</label><input type="text" id="new-complaint-assign" placeholder="Staff name"></div>
+          </div>
+          <div class="form-group" style="margin-bottom:10px"><label>Description</label><textarea id="new-complaint-desc" placeholder="Detailed description of the issue..."></textarea></div>
+          <div style="display:flex;gap:8px">
+            <button class="glass-btn glass-btn-primary" id="btn-confirm-add-complaint">Create Ticket</button>
+            <button class="glass-btn glass-btn-secondary" onclick="document.getElementById('admin-complaint-create-form').style.display='none'">Cancel</button>
+          </div>
+        </div>
+        <div id="admin-complaints-list"><!-- JS --></div>
+      </div>
+
+      <!-- Audit Log -->
+      <div class="glass-card">
+        <div class="flex-between" style="margin-bottom:12px">
+          <h3 class="form-title" style="margin:0;padding:0;border:none">Audit Trail</h3>
+          <div style="display:flex;gap:8px">
+            <select class="role-select" id="audit-filter-action" style="padding:4px 28px 4px 8px"><option value="all">All Actions</option><option value="Create">Create</option><option value="Edit">Edit</option><option value="View">View</option></select>
+            <button class="glass-btn glass-btn-secondary" id="btn-clear-audit-logs">Clear Logs</button>
+          </div>
+        </div>
+        <div class="audit-logs-container" id="audit-logs-viewport"></div>
+      </div>
+    </div>
+
+    <!-- ====== SYSTEM SETTINGS PAGE ====== -->
+    <div class="role-panel settings-page" id="page-system-settings" style="display:none">
+      <button class="settings-back-btn" onclick="navigateBackFromSettings()">
+        <svg viewBox="0 0 24 24"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+        Back to Dashboard
+      </button>
+      <h2 style="font-family:var(--font-heading);font-size:1.3rem;margin-bottom:16px;color:var(--primary)">System Settings & Configuration</h2>
+      <div class="settings-grid">
+        <!-- Hospital Info -->
+        <div class="settings-card">
+          <h3><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Hospital Information</h3>
+          <div class="form-group"><label>Hospital Name</label><input type="text" value="Auratral General Hospital" id="settings-hospital-name"></div>
+          <div class="form-group"><label>License Number</label><input type="text" value="HOSP-KA-2024-1129" readonly></div>
+          <div class="form-group"><label>Address</label><input type="text" value="123, MG Road, Bengaluru 560001"></div>
+          <div class="form-group"><label>Emergency Helpline</label><input type="text" value="+91 80 1234 5678"></div>
+        </div>
+        <!-- Security -->
+        <div class="settings-card">
+          <h3><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> Security & Access</h3>
+          <div class="settings-row"><div><div class="settings-row-label">Staff 2FA</div><div class="settings-row-desc">Require two-factor auth for staff login</div></div><div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" checked id="policy-2fa"><span class="toggle-slider"></span></label></div></div>
+          <div class="settings-row"><div><div class="settings-row-label">Session Timeout</div><div class="settings-row-desc">Auto-logout after inactivity</div></div><div class="settings-row-control"><select class="role-select" style="padding:4px 28px 4px 8px"><option>15 min</option><option selected>30 min</option><option>60 min</option><option>Never</option></select></div></div>
+          <div class="settings-row"><div><div class="settings-row-label">Password Policy</div><div class="settings-row-desc">Minimum password complexity</div></div><div class="settings-row-control"><select class="role-select" style="padding:4px 28px 4px 8px"><option>Basic</option><option selected>Strong</option><option>Enterprise</option></select></div></div>
+          <div class="settings-row"><div><div class="settings-row-label">IP Whitelisting</div><div class="settings-row-desc">Restrict access to specific IPs</div></div><div class="settings-row-control"><label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label></div></div>
+        </div>
+        <!-- Modules -->
+        <div class="settings-card">
+          <h3><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Active Modules</h3>
+          <div class="settings-row"><div><div class="settings-row-label">Pharmacy Module</div></div><div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" checked id="module-pharmacy"><span class="toggle-slider"></span></label></div></div>
+          <div class="settings-row"><div><div class="settings-row-label">Radiology Module</div></div><div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" checked id="module-radiology"><span class="toggle-slider"></span></label></div></div>
+          <div class="settings-row"><div><div class="settings-row-label">Laboratory Module</div></div><div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" checked id="module-lab"><span class="toggle-slider"></span></label></div></div>
+          <div class="settings-row"><div><div class="settings-row-label">Patient Portal</div></div><div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div></div>
+          <div class="settings-row"><div><div class="settings-row-label">AI Triage Engine</div></div><div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div></div>
+        </div>
+        <!-- Data Retention -->
+        <div class="settings-card">
+          <h3><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg> Data & Compliance</h3>
+          <div class="form-group"><label>Data Retention</label><select id="policy-retention"><option value="7">7 Years (DPDP)</option><option value="10">10 Years</option><option value="15">15 Years</option><option value="forever">Indefinite</option></select></div>
+          <div style="background:rgba(70,15,117,.04);padding:10px;border-radius:var(--radius-md);border:1px dashed var(--primary);margin-top:10px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span class="status-indicator status-active" style="padding:2px 6px;font-size:.6rem;color:var(--primary);background:var(--light-purple)">ACTIVE</span><strong style="font-size:.75rem;color:var(--primary)">AES-GCM-256</strong></div>
+            <div class="form-group"><label>PII Passphrase</label><div class="input-with-button"><input type="password" id="sys-crypto-passphrase" value="AuratralHospitalOSSecurePIIKey2026!" readonly style="font-size:.72rem"><button type="button" class="glass-btn glass-btn-secondary" style="padding:3px 8px;font-size:.68rem" onclick="togglePassphraseVisibility()">Show</button></div></div>
+          </div>
+        </div>
+        <!-- Backup -->
+        <div class="settings-card">
+          <h3><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Backup & Export</h3>
+          <div class="settings-row"><div><div class="settings-row-label">Auto Backup</div><div class="settings-row-desc">Daily cloud backup at 2:00 AM</div></div><div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div></div>
+          <div class="settings-row"><div><div class="settings-row-label">Last Backup</div></div><div class="settings-row-control"><span style="font-size:.72rem;color:var(--success);font-weight:600">Today, 02:00 AM</span></div></div>
+          <button class="glass-btn glass-btn-primary" style="width:100%;margin-top:10px" onclick="showToast('Export started. File will be ready shortly.','info')">Export All Data (CSV)</button>
+        </div>
+        <!-- Notifications -->
+        <div class="settings-card">
+          <h3><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg> Notification Preferences</h3>
+          <div class="settings-row"><div><div class="settings-row-label">Critical Alerts</div><div class="settings-row-desc">Emergency & critical results</div></div><div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div></div>
+          <div class="settings-row"><div><div class="settings-row-label">Staff Shift Changes</div></div><div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div></div>
+          <div class="settings-row"><div><div class="settings-row-label">Equipment Maintenance</div></div><div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div></div>
+          <div class="settings-row"><div><div class="settings-row-label">Patient Portal Messages</div></div><div class="settings-row-control"><label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 2. RECEPTION PANEL ====== -->
+    <div class="role-panel" id="role-panel-reception" style="display:none">
+      <div class="workspace-grid">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <!-- Registration Form -->
+          <div class="glass-card">
+            <h3 class="form-title">New Patient Registration</h3>
+            <form id="reception-registration-form" onsubmit="event.preventDefault()">
+              <div style="text-align:center;margin-bottom:12px">
+                <div class="photo-placeholder" id="patient-photo-preview" onclick="openWebcam()">
+                  <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                </div>
+                <div style="font-size:.65rem;color:var(--text-3);margin-top:4px">Click to capture photo</div>
+              </div>
+              <div class="form-group"><label>Full Name *</label><input type="text" id="reg-name" required placeholder="Rajesh Kumar"></div>
+              <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:0">
+                <div class="form-group"><label>Date of Birth *</label><input type="date" id="reg-dob" required></div>
+                <div class="form-group"><label>Gender *</label><select id="reg-gender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+              </div>
+              <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:0">
+                <div class="form-group"><label>Mobile *</label><input type="tel" id="reg-mobile" required placeholder="9876543210"></div>
+                <div class="form-group"><label>Blood Group</label><select id="reg-blood"><option value="">Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select></div>
+              </div>
+              <div class="form-group"><label>Address</label><input type="text" id="reg-address-street" placeholder="Street, City, State - PIN"></div>
+              <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:0">
+                <div class="form-group"><label>Occupation</label><input type="text" id="reg-occupation" placeholder="e.g. Engineer"></div>
+                <div class="form-group"><label>Marital Status</label><select id="reg-marital"><option>Single</option><option>Married</option><option>Widowed</option><option>Divorced</option></select></div>
+              </div>
+              <div class="form-group"><label>Known Allergies</label><input type="text" id="reg-allergies" placeholder="e.g. Penicillin, Dust"></div>
+              <div class="form-group"><label>Chronic Conditions</label><input type="text" id="reg-chronic" placeholder="e.g. Diabetes, Hypertension"></div>
+              <div class="form-group"><label>Emergency Contact *</label><input type="text" id="reg-emergency" required placeholder="Name - Mobile"></div>
+              <div class="form-group"><label>Insurance (TPA - Policy)</label><input type="text" id="reg-insurance" placeholder="Star Health - POL100329"></div>
+              <div class="form-group"><label>Referred By</label><input type="text" id="reg-referred-by" placeholder="Dr. Name / Self"></div>
+              <!-- ABHA -->
+              <div style="background:rgba(2,132,199,.05);padding:10px;border-radius:var(--radius-md);border:1px dashed rgba(2,132,199,.3);margin-bottom:10px">
+                <span style="font-size:.72rem;font-weight:700;color:#0284c7;display:block;margin-bottom:6px">ABDM / ABHA Linking</span>
+                <div class="input-with-button" style="margin-bottom:6px">
+                  <input type="text" id="reg-abha-input" placeholder="Aadhaar / Mobile for ABHA">
+                  <button type="button" class="glass-btn glass-btn-primary" style="background:linear-gradient(135deg,#0284c7,#0369a1)" id="btn-reception-abha-verify">Get OTP</button>
+                </div>
+                <div class="abha-badge" id="reception-abha-status-badge" style="display:none;width:100%;justify-content:center"><span class="abha-logo-mini">A</span> ABHA: <span id="reception-abha-display-id">N/A</span></div>
+              </div>
+              <!-- Consent -->
+              <div style="border-top:1px solid var(--border);padding-top:8px;margin-bottom:10px">
+                <label style="display:flex;align-items:center;gap:6px;font-size:.75rem;cursor:pointer;margin-bottom:4px"><input type="checkbox" id="reg-consent-academic" checked> Academic research consent</label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:.75rem;cursor:pointer"><input type="checkbox" id="reg-consent-commercial" checked> Commercial AI/ML consent</label>
+              </div>
+              <button type="button" class="glass-btn glass-btn-primary" style="width:100%" id="btn-submit-registration">Register Patient</button>
+            </form>
+          </div>
+          <!-- AI Triage -->
+          <div class="glass-card">
+            <h3 class="form-title">AI Symptom Triage</h3>
+            <div class="form-group"><label>Patient Symptoms</label><input type="text" id="symptom-triage-input" placeholder="e.g. chest pain, shortness of breath"></div>
+            <button class="glass-btn glass-btn-primary" style="width:100%" id="btn-triage-check" onclick="runSymptomTriage()">Analyze Urgency</button>
+            <div class="triage-result" id="triage-result-panel"></div>
+          </div>
+        </div>
+        <!-- Right Column -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="glass-card">
+            <h3 class="form-title">Book Appointment</h3>
+            <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:10px">
+              <div class="form-group"><label>Patient ID</label><input type="text" id="appointment-patient-id" readonly placeholder="Select from search"></div>
+              <div class="form-group"><label>Consultant *</label><select id="appointment-doctor"></select></div>
+            </div>
+            <div class="flex-between">
+              <div class="form-group" style="flex:1;margin-right:10px"><label>Type</label><select id="appointment-type"><option>OPD Consultation</option><option>Follow-up</option><option>Emergency</option></select></div>
+              <button class="glass-btn glass-btn-primary" id="btn-schedule-appointment" style="align-self:flex-end">Book</button>
+            </div>
+          </div>
+          <div class="glass-card">
+            <h3 class="form-title">Live OPD Queue</h3>
+            <div class="table-wrapper"><table class="ehr-table"><thead><tr><th>Token</th><th>Patient ID</th><th>Name</th><th>Dept</th><th>Status</th><th>Action</th></tr></thead><tbody id="reception-queue-table-body"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 3. NURSING PANEL ====== -->
+    <div class="role-panel" id="role-panel-nursing" style="display:none">
+      <div class="workspace-grid">
+        <div class="glass-card">
+          <h3 class="form-title">Patient Queue</h3>
+          <div style="font-size:.68rem;color:var(--text-3);margin-bottom:8px">New check-ins & patients returning with results</div>
+          <div class="records-list" id="nursing-patient-list"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="glass-card" id="nursing-details-workspace" style="display:none">
+            <h3 class="form-title">Vitals: <span id="nursing-active-patient-name">Patient</span></h3>
+            <div class="vitals-grid" style="margin-bottom:14px">
+              <div class="vital-box" id="vital-box-bp"><div class="vital-box-title">BP</div><div class="vital-box-value" id="disp-vital-bp">-</div><div class="vital-box-unit">mmHg</div></div>
+              <div class="vital-box" id="vital-box-temp"><div class="vital-box-title">Temp</div><div class="vital-box-value" id="disp-vital-temp">-</div><div class="vital-box-unit">°F</div></div>
+              <div class="vital-box" id="vital-box-spo2"><div class="vital-box-title">SpO2</div><div class="vital-box-value" id="disp-vital-spo2">-</div><div class="vital-box-unit">%</div></div>
+              <div class="vital-box" id="vital-box-pulse"><div class="vital-box-title">Pulse</div><div class="vital-box-value" id="disp-vital-pulse">-</div><div class="vital-box-unit">bpm</div></div>
+              <div class="vital-box" id="vital-box-sugar"><div class="vital-box-title">Sugar</div><div class="vital-box-value" id="disp-vital-sugar">-</div><div class="vital-box-unit">mg/dL</div></div>
+            </div>
+            <h4 style="font-size:.85rem;margin-bottom:8px">Record New Vitals</h4>
+            <form id="nursing-vitals-form" onsubmit="event.preventDefault()">
+              <div class="form-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:8px">
+                <div class="form-group"><label>BP</label><input type="text" id="vital-in-bp" placeholder="120/80"></div>
+                <div class="form-group"><label>Temp °F</label><input type="number" step="0.1" id="vital-in-temp" placeholder="98.6"></div>
+                <div class="form-group"><label>SpO2 %</label><input type="number" id="vital-in-spo2" placeholder="98"></div>
+                <div class="form-group"><label>Pulse</label><input type="number" id="vital-in-pulse" placeholder="72"></div>
+                <div class="form-group"><label>Sugar</label><input type="number" id="vital-in-sugar" placeholder="100"></div>
+              </div>
+              <div class="form-group"><label>Notes</label><textarea id="vital-in-notes" placeholder="Complaints, observations..."></textarea></div>
+              <button type="button" class="glass-btn glass-btn-primary" id="btn-save-vitals" style="width:100%">Save & Send to Doctor</button>
+            </form>
+          </div>
+          <div class="glass-card" id="nursing-empty-state" style="display:flex;align-items:center;justify-content:center;min-height:200px"><p style="color:var(--text-2);text-align:center;font-size:.78rem">Select a patient from the queue.</p></div>
+          <!-- Bed Management -->
+          <div class="glass-card">
+            <h3 class="form-title">Ward Bed Management</h3>
+            <div class="bed-grid" id="bed-management-grid"><!-- JS --></div>
+            <div style="display:flex;gap:12px;margin-top:8px;font-size:.65rem">
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--success-bg);border:1px solid var(--success);vertical-align:middle"></span> Available</span>
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:rgba(37,99,235,.08);border:1px solid var(--info);vertical-align:middle"></span> Occupied</span>
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--warning-bg);border:1px solid var(--warning);vertical-align:middle"></span> Cleaning</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 4. DOCTOR PANEL ====== -->
+    <div class="role-panel" id="role-panel-doctor" style="display:none">
+      <div class="workspace-grid">
+        <div class="glass-card">
+          <h3 class="form-title">Consultation Queue</h3>
+          <div class="records-list" id="doctor-patient-list"></div>
+        </div>
+        <div class="glass-card" id="doctor-details-workspace" style="display:none">
+          <div class="flex-between" style="border-bottom:2px solid var(--border);padding-bottom:10px;margin-bottom:12px">
+            <div>
+              <h3 style="font-size:1.1rem;font-family:'Space Grotesk'" id="doctor-active-patient-name">Patient</h3>
+              <div style="display:flex;gap:6px;align-items:center;margin-top:3px">
+                <span class="user-role-badge" id="doctor-active-patient-id">ID</span>
+                <span class="insurance-badge" id="doctor-active-patient-insurance">Insurance</span>
+                <div class="abha-badge" id="doctor-active-patient-abha-badge"><span class="abha-logo-mini">A</span> ABHA</div>
+              </div>
+            </div>
+            <div style="text-align:right"><span style="font-size:.65rem;font-weight:600;color:var(--text-3);text-transform:uppercase">Vitals:</span><div style="font-size:.78rem;font-weight:600;color:var(--primary);margin-top:2px" id="doctor-vitals-preview">BP: -- | SpO2: --</div></div>
+          </div>
+          <!-- Returning patient indicator -->
+          <div id="doctor-returning-badge" style="display:none;padding:8px 12px;background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(124,58,237,.08));border:1px solid rgba(124,58,237,.2);border-radius:var(--radius-md);margin-bottom:10px;font-size:.78rem;font-weight:600;color:var(--primary)">
+            📋 Returning Patient — Investigation results available. Review in Records tab.
+          </div>
+          <!-- AI Diagnosis -->
+          <div id="ai-diagnosis-panel" style="display:none;padding:8px 10px;background:var(--info-bg);border:1px solid var(--info);border-radius:var(--radius-md);margin-bottom:10px;font-size:.72rem"><strong>AI Suggested Diagnoses:</strong> <span id="ai-diagnosis-suggestions"></span></div>
+          <div id="drug-interaction-alert" style="display:none;padding:8px 10px;background:var(--warning-bg);border:1px solid var(--warning);border-radius:var(--radius-md);margin-bottom:10px;font-size:.72rem"></div>
+          <!-- Tabs -->
+          <div style="display:flex;gap:8px;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:6px">
+            <button class="glass-btn glass-btn-secondary active" style="padding:5px 12px;font-size:.75rem" id="tab-doc-clinical">SOAP Note</button>
+            <button class="glass-btn glass-btn-secondary" style="padding:5px 12px;font-size:.75rem" id="tab-doc-history">Records & Files</button>
+          </div>
+          <!-- SOAP Content -->
+          <div id="doctor-tab-soap-content">
+            <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:10px">
+              <div class="form-group"><label>Subjective</label><textarea id="soap-s" placeholder="Patient complaints..."></textarea></div>
+              <div class="form-group"><label>Objective</label><textarea id="soap-o" placeholder="Clinical observations..."></textarea></div>
+            </div>
+            <div class="form-group dropdown-search-container" style="margin-bottom:10px">
+              <label>Assessment (ICD-10) *</label>
+              <input type="text" id="soap-a-search" placeholder="Search ICD-10...">
+              <div class="autocomplete-dropdown" id="soap-a-dropdown" style="display:none"></div>
+              <div class="tag-container" id="soap-a-tags"></div>
+            </div>
+            <div class="form-group" style="margin-bottom:10px"><label>Plan</label><textarea id="soap-p" placeholder="Treatment plan..."></textarea></div>
+            <!-- Prescription -->
+            <div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:10px">
+              <div class="flex-between"><label style="color:var(--primary);font-size:.78rem;font-weight:600">Prescription</label><button class="glass-btn glass-btn-secondary" style="padding:3px 8px;font-size:.68rem" id="btn-doc-add-med">+ Medicine</button></div>
+              <table class="prescription-builder-table"><thead><tr><th>Medicine</th><th>Dose</th><th>Frequency</th><th>Duration</th><th></th></tr></thead><tbody id="prescription-builder-body"></tbody></table>
+            </div>
+            <!-- Investigation Orders — Clean Chips -->
+            <div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:12px">
+              <label style="color:var(--primary);font-size:.78rem;font-weight:600;display:block;margin-bottom:8px">Order Investigations</label>
+              <div class="investigation-category">
+                <div class="investigation-category-title">🔬 Laboratory Tests</div>
+                <div class="investigation-chips" id="lab-test-chips">
+                  <span class="investigation-chip" data-test="Fasting Blood Sugar" data-type="Lab">Fasting Blood Sugar</span>
+                  <span class="investigation-chip" data-test="HbA1c" data-type="Lab">HbA1c</span>
+                  <span class="investigation-chip" data-test="Complete Blood Count" data-type="Lab">CBC</span>
+                  <span class="investigation-chip" data-test="Lipid Profile" data-type="Lab">Lipid Profile</span>
+                  <span class="investigation-chip" data-test="Liver Function Test" data-type="Lab">LFT</span>
+                  <span class="investigation-chip" data-test="Kidney Function Test" data-type="Lab">KFT</span>
+                  <span class="investigation-chip" data-test="Thyroid Profile" data-type="Lab">Thyroid</span>
+                  <span class="investigation-chip" data-test="Urine Routine" data-type="Lab">Urine R/E</span>
+                </div>
+              </div>
+              <div class="investigation-category">
+                <div class="investigation-category-title">📷 Radiology & Imaging</div>
+                <div class="investigation-chips" id="radio-test-chips">
+                  <span class="investigation-chip" data-test="Chest X-Ray PA View" data-type="Radiology">Chest X-Ray</span>
+                  <span class="investigation-chip" data-test="Ultrasound Abdomen & Pelvis" data-type="Radiology">USG Abdomen</span>
+                  <span class="investigation-chip" data-test="CT Brain (Plain)" data-type="Radiology">CT Brain</span>
+                  <span class="investigation-chip" data-test="MRI Spine (Cervical)" data-type="Radiology">MRI Spine</span>
+                  <span class="investigation-chip" data-test="ECG 12-Lead" data-type="Radiology">ECG</span>
+                  <span class="investigation-chip" data-test="2D Echo" data-type="Radiology">2D Echo</span>
+                </div>
+              </div>
+            </div>
+            <!-- Actions -->
+            <div class="flex-between" style="border-top:1px solid var(--border);padding-top:10px">
+              <button class="glass-btn glass-btn-secondary" id="btn-doc-upload-file"><svg viewBox="0 0 24 24" style="width:13px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Upload File</button>
+              <div style="display:flex;gap:8px;align-items:center">
+                <label style="display:flex;align-items:center;gap:4px;font-size:.72rem;cursor:pointer"><input type="checkbox" id="doc-research-flag"> Research</label>
+                <button class="glass-btn glass-btn-primary" id="btn-doc-refer-tests" style="display:none">Refer for Tests</button>
+                <button class="glass-btn glass-btn-primary" id="btn-doc-esign-finalize">E-Sign & Close Case</button>
+              </div>
+            </div>
+          </div>
+          <!-- History Tab -->
+          <div id="doctor-tab-history-content" style="display:none"><div style="display:flex;flex-direction:column;gap:8px" id="doctor-historical-docs-list"></div></div>
+        </div>
+        <div class="glass-card" id="doctor-empty-state" style="display:flex;align-items:center;justify-content:center;min-height:200px"><p style="color:var(--text-2);text-align:center;font-size:.78rem">Select a patient from the queue.</p></div>
+      </div>
+    </div>
+
+    <!-- ====== 5. LAB PANEL ====== -->
+    <div class="role-panel" id="role-panel-lab" style="display:none">
+      <div class="workspace-grid">
+        <div class="glass-card">
+          <h3 class="form-title">Pending Lab Tests</h3>
+          <div class="records-list" id="lab-pending-list"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="glass-card" id="lab-workspace" style="display:none">
+            <h3 class="form-title">Results: <span id="lab-active-test-name">Test</span></h3>
+            <div class="sample-tracker" id="lab-sample-tracker" style="margin-bottom:10px">
+              <div class="sample-step completed" style="border-radius:var(--radius-md) 0 0 var(--radius-md)">Collected</div>
+              <div class="sample-step active">Processing</div>
+              <div class="sample-step pending" style="border-radius:0 var(--radius-md) var(--radius-md) 0">Reported</div>
+            </div>
+            <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:10px">
+              <div class="form-group"><label>Patient</label><input type="text" id="lab-active-patient-details" disabled></div>
+              <div class="form-group"><label>Requested By</label><input type="text" id="lab-active-doctor-details" disabled></div>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:10px">
+              <div class="form-grid" style="grid-template-columns:1.5fr 1fr 1fr;margin-bottom:10px">
+                <div class="form-group"><label>Parameter</label><input type="text" id="lab-param-name" readonly></div>
+                <div class="form-group"><label>Value *</label><input type="text" id="lab-param-value" required placeholder="Enter value"></div>
+                <div class="form-group"><label>Reference</label><input type="text" id="lab-param-ref" readonly></div>
+              </div>
+              <div class="form-group" style="margin-bottom:10px"><label>Findings</label><textarea id="lab-param-notes" placeholder="Pathologist comments..."></textarea></div>
+              <div class="form-group" style="margin-bottom:10px"><label>Upload PDF</label><input type="file" id="lab-file-pdf" style="padding:5px"></div>
+              <div class="flex-between">
+                <button class="glass-btn glass-btn-secondary" id="btn-lab-mark-pending">Save Draft</button>
+                <button class="glass-btn glass-btn-primary" id="btn-lab-submit-final">Finalize & Send to Doctor</button>
+              </div>
+            </div>
+          </div>
+          <div class="glass-card" id="lab-empty-state" style="display:flex;align-items:center;justify-content:center;min-height:200px"><p style="color:var(--text-2);text-align:center;font-size:.78rem">Select a test from the queue.</p></div>
+          <div class="glass-card" id="lab-qc-stats">
+            <h3 class="form-title">Quality Control</h3>
+            <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+              <div style="text-align:center;padding:8px"><div style="font-size:1.2rem;font-weight:700;color:var(--success);font-family:'Space Grotesk'">98.5%</div><div style="font-size:.65rem;color:var(--text-2)">Accuracy Rate</div></div>
+              <div style="text-align:center;padding:8px"><div style="font-size:1.2rem;font-weight:700;color:var(--primary);font-family:'Space Grotesk'">45min</div><div style="font-size:.65rem;color:var(--text-2)">Avg TAT</div></div>
+              <div style="text-align:center;padding:8px"><div style="font-size:1.2rem;font-weight:700;color:var(--warning);font-family:'Space Grotesk'">2</div><div style="font-size:.65rem;color:var(--text-2)">Critical Alerts</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 6. RADIOLOGY PANEL ====== -->
+    <div class="role-panel" id="role-panel-radiology" style="display:none">
+      <div class="workspace-grid">
+        <div class="glass-card"><h3 class="form-title">Imaging Queue</h3><div class="records-list" id="radiology-pending-list"></div></div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="glass-card" id="radiology-workspace" style="display:none">
+            <h3 class="form-title">Study: <span id="radiology-active-study-name">Scan</span></h3>
+            <div class="form-grid" style="grid-template-columns:1.5fr 1fr;margin-bottom:10px">
+              <div class="form-group"><label>Patient</label><input type="text" id="radiology-active-patient-details" disabled></div>
+              <div class="form-group"><label>Urgency</label><select id="radiology-active-urgency"><option>Routine</option><option>Urgent</option><option>STAT</option></select></div>
+            </div>
+            <div class="grid-2" style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:12px">
+              <div>
+                <div class="form-group" style="margin-bottom:8px"><label>Findings *</label><textarea id="radiology-report-text" style="min-height:100px" placeholder="Radiological evaluation..."></textarea></div>
+                <div class="form-group"><label>Status</label><select id="radiology-report-status"><option>Final</option><option>Preliminary</option><option>Amended</option></select></div>
+              </div>
+              <div>
+                <label style="font-size:.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:4px;display:block">Upload Scans</label>
+                <div class="upload-dropzone" id="radiology-dropzone" onclick="document.getElementById('radiology-file-input').click()">
+                  <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  <p style="font-size:.75rem;font-weight:600;color:var(--primary)">Click to upload</p>
+                </div>
+                <input type="file" id="radiology-file-input" style="display:none" accept="image/*">
+                <div class="image-preview-sim" id="radiology-image-preview" style="display:none"><img src="" id="radiology-preview-img" alt="Scan"></div>
+              </div>
+            </div>
+            <div class="flex-between"><span class="text-muted" style="font-size:.72rem">Results auto-route to treating doctor</span><button class="glass-btn glass-btn-primary" id="btn-radiology-submit">Finalize & Send to Doctor</button></div>
+          </div>
+          <div class="glass-card" id="radiology-empty-state" style="display:flex;align-items:center;justify-content:center;min-height:200px"><p style="color:var(--text-2);text-align:center;font-size:.78rem">Select a scan from the queue.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 7. PHARMACY PANEL ====== -->
+    <div class="role-panel" id="role-panel-pharmacy" style="display:none">
+      <div class="workspace-grid">
+        <div class="glass-card"><h3 class="form-title">Prescription Queue</h3><div class="records-list" id="pharmacy-pending-list"></div></div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="glass-card" id="pharmacy-workspace" style="display:none">
+            <h3 class="form-title">Dispense: <span id="pharmacy-active-patient-name">Patient</span></h3>
+            <div class="table-wrapper" style="margin-bottom:12px"><table class="ehr-table"><thead><tr><th>Medicine</th><th>Dosage</th><th>Duration</th><th>Status</th><th>Substitute</th></tr></thead><tbody id="pharmacy-dispense-table-body"></tbody></table></div>
+            <div style="background:rgba(245,158,11,.05);padding:8px 10px;border-radius:var(--radius-md);border:1px dashed rgba(245,158,11,.3);margin-bottom:12px"><div style="display:flex;align-items:center;gap:6px"><span class="badge-round" style="background:var(--warning);width:20px;height:20px;font-size:.6rem">!</span><span style="font-size:.72rem;font-weight:600;color:#b45309" id="pharmacy-inventory-warning">Inventory Stable</span></div></div>
+            <div class="flex-between">
+              <button class="glass-btn glass-btn-secondary" id="btn-pharmacy-print-slip">Print Label</button>
+              <button class="glass-btn glass-btn-primary" id="btn-pharmacy-complete">Dispense & Complete</button>
+            </div>
+          </div>
+          <div class="glass-card" id="pharmacy-empty-state" style="display:flex;align-items:center;justify-content:center;min-height:150px"><p style="color:var(--text-2);text-align:center;font-size:.78rem">Select a prescription.</p></div>
+          <div class="glass-card">
+            <h3 class="form-title">Drug Inventory</h3>
+            <div class="table-wrapper"><table class="ehr-table"><thead><tr><th>Drug</th><th>Stock</th><th>Expiry</th><th>Status</th></tr></thead><tbody id="pharmacy-inventory-table-body">
+              <tr><td class="text-bold">Paracetamol 650mg</td><td>2,400</td><td>2027-03-15</td><td><span class="status-indicator status-done">OK</span></td></tr>
+              <tr><td class="text-bold">Metformin 500mg</td><td>1,800</td><td>2027-06-20</td><td><span class="status-indicator status-done">OK</span></td></tr>
+              <tr><td class="text-bold">Amlodipine 5mg</td><td>950</td><td>2027-01-10</td><td><span class="status-indicator status-done">OK</span></td></tr>
+              <tr class="inventory-low"><td class="text-bold">Amoxicillin 500mg</td><td>120</td><td>2026-09-30</td><td><span class="status-indicator status-booked">Low</span></td></tr>
+              <tr><td class="text-bold">Omeprazole 20mg</td><td>3,200</td><td>2027-08-05</td><td><span class="status-indicator status-done">OK</span></td></tr>
+              <tr class="inventory-critical"><td class="text-bold">Ceftriaxone 1g</td><td>45</td><td>2026-07-18</td><td><span class="status-indicator status-canceled">Critical</span></td></tr>
+            </tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 8. FINANCE PANEL ====== -->
+    <div class="role-panel" id="role-panel-finance" style="display:none">
+      <div class="revenue-cards" id="finance-revenue-cards">
+        <div class="glass-card revenue-card" style="border-left:4px solid var(--success)"><div class="rev-amount" style="color:var(--success)">₹12,450</div><div class="rev-label">Today</div></div>
+        <div class="glass-card revenue-card" style="border-left:4px solid var(--info)"><div class="rev-amount" style="color:var(--info)">₹78,300</div><div class="rev-label">This Week</div></div>
+        <div class="glass-card revenue-card" style="border-left:4px solid var(--primary)"><div class="rev-amount" style="color:var(--primary)">₹3,24,500</div><div class="rev-label">This Month</div></div>
+        <div class="glass-card revenue-card" style="border-left:4px solid var(--danger)"><div class="rev-amount" style="color:var(--danger)">₹45,200</div><div class="rev-label">Outstanding</div></div>
+      </div>
+      <div class="workspace-grid">
+        <div class="glass-card"><h3 class="form-title">Pending Invoices</h3><div class="records-list" id="finance-billing-list"></div></div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="glass-card" id="finance-workspace" style="display:none">
+            <h3 class="form-title">Invoice: <span id="finance-active-patient-name">Patient</span></h3>
+            <div class="table-wrapper" style="margin-bottom:12px"><table class="ehr-table"><thead><tr><th>Service</th><th>Qty</th><th>Rate (₹)</th><th>Amount (₹)</th><th></th></tr></thead><tbody id="finance-bill-items-body"></tbody></table></div>
+            <div class="grid-2" style="margin-bottom:12px">
+              <div>
+                <label style="font-size:.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase">Payment Mode</label>
+                <select id="finance-payment-mode" style="margin-top:4px"><option>Cash</option><option>UPI / QR Code</option><option>Debit/Credit Card</option><option>Insurance TPA Cover</option></select>
+                <div id="finance-insurance-details-panel" style="display:none;margin-top:8px;background:rgba(16,185,129,.05);padding:8px;border-radius:var(--radius-md);border:1px dashed rgba(16,185,129,.25)">
+                  <div class="form-group" style="margin-bottom:4px"><label>Pre-Auth #</label><input type="text" id="finance-preauth-number" placeholder="COV-XXXXX"></div>
+                  <label style="display:flex;align-items:center;gap:4px;font-size:.72rem;cursor:pointer"><input type="checkbox" id="finance-preauth-approved"> TPA Approved</label>
+                </div>
+              </div>
+              <div class="glass-card" style="background:var(--bg);padding:12px">
+                <div class="flex-between" style="margin-bottom:4px;font-size:.78rem"><span>Subtotal:</span><span id="finance-bill-subtotal">₹0</span></div>
+                <div class="flex-between" style="margin-bottom:4px;font-size:.78rem"><span>GST (5%):</span><span id="finance-bill-gst">₹0</span></div>
+                <div class="flex-between" style="margin-bottom:4px;font-size:.78rem;padding-bottom:4px;border-bottom:1px solid var(--border)"><span>Insurance:</span><span id="finance-bill-insurance-deduct">-₹0</span></div>
+                <div class="flex-between" style="font-size:1rem;font-weight:700;color:var(--primary);margin-top:4px"><span>Total Due:</span><span id="finance-bill-total">₹0</span></div>
+              </div>
+            </div>
+            <div class="flex-between">
+              <button class="glass-btn glass-btn-secondary" id="btn-finance-print-invoice">Print Invoice</button>
+              <button class="glass-btn glass-btn-primary" id="btn-finance-checkout">Record Payment</button>
+            </div>
+          </div>
+          <div class="glass-card" id="finance-empty-state" style="display:flex;align-items:center;justify-content:center;min-height:150px"><p style="color:var(--text-2);text-align:center;font-size:.78rem">Select an invoice.</p></div>
+          <div class="glass-card" id="finance-dept-revenue">
+            <h3 class="form-title">Department Revenue</h3>
+            <div class="dept-revenue-bar"><span style="width:80px;flex-shrink:0">OPD</span><div style="flex:1;background:var(--bg);border-radius:4px;overflow:hidden"><div class="bar-fill" style="width:85%"></div></div><span style="font-weight:600;width:60px;text-align:right">₹1.2L</span></div>
+            <div class="dept-revenue-bar"><span style="width:80px;flex-shrink:0">Radiology</span><div style="flex:1;background:var(--bg);border-radius:4px;overflow:hidden"><div class="bar-fill" style="width:65%"></div></div><span style="font-weight:600;width:60px;text-align:right">₹89K</span></div>
+            <div class="dept-revenue-bar"><span style="width:80px;flex-shrink:0">Pharmacy</span><div style="flex:1;background:var(--bg);border-radius:4px;overflow:hidden"><div class="bar-fill" style="width:50%"></div></div><span style="font-weight:600;width:60px;text-align:right">₹62K</span></div>
+            <div class="dept-revenue-bar"><span style="width:80px;flex-shrink:0">Lab</span><div style="flex:1;background:var(--bg);border-radius:4px;overflow:hidden"><div class="bar-fill" style="width:40%"></div></div><span style="font-weight:600;width:60px;text-align:right">₹48K</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 9. PATIENT PORTAL ====== -->
+    <div class="role-panel" id="role-panel-patient" style="display:none">
+      <div class="patient-portal-wrapper">
+        <div class="smartphone-frame">
+          <div class="phone-notch"><div class="phone-speaker"></div><div class="phone-camera"></div></div>
+          <div class="phone-screen" id="phone-screen-viewport">
+            <div class="phone-status-bar"><span id="phone-clock">12:00</span><div class="status-bar-icons"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 21a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0-6c1.3 0 2.5.5 3.5 1.2.4.3.9.1 1.2-.2.3-.4.2-.9-.3-1.1-2.5-1.8-6.3-1.8-8.9 0-.4.3-.5.8-.2 1.1.3.4.8.5 1.2.2A6 6 0 0 1 12 15z"/></svg><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M17 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm4 4h2v6h-2V9z"/></svg></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+
+  <!-- ========== MODALS ========== -->
+
+  <!-- ABHA OTP Modal -->
+  <div class="modal-overlay" id="modal-abha-otp">
+    <div class="modal-box">
+      <div class="modal-header"><h3 class="modal-title">ABHA OTP Verification</h3><button class="modal-close-btn" onclick="document.getElementById('modal-abha-otp').classList.remove('open')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+      <div class="modal-body">
+        <p style="font-size:.78rem;color:var(--text-2);margin-bottom:12px">An OTP has been sent to the Aadhaar-linked mobile.</p>
+        <div class="form-group"><label>Enter 6-Digit OTP</label><input type="text" id="abha-otp-input" placeholder="123456" style="font-size:1.1rem;text-align:center;letter-spacing:.2em;font-weight:700"></div>
+        <span style="font-size:.68rem;color:var(--success);font-weight:600;display:block;text-align:center;margin-top:6px">Demo: Use code 123456</span>
+      </div>
+      <div class="modal-footer"><button class="glass-btn glass-btn-secondary" onclick="document.getElementById('modal-abha-otp').classList.remove('open')">Cancel</button><button class="glass-btn glass-btn-primary" id="btn-submit-abha-otp">Link ABHA</button></div>
+    </div>
+  </div>
+
+  <!-- Doctor E-Sign Modal -->
+  <div class="modal-overlay" id="modal-doctor-esign">
+    <div class="modal-box">
+      <div class="modal-header"><h3 class="modal-title">Digital Signature</h3><button class="modal-close-btn" onclick="document.getElementById('modal-doctor-esign').classList.remove('open')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+      <div class="modal-body">
+        <p style="font-size:.78rem;color:var(--text-2);margin-bottom:10px">Finalize and commit this clinical record. DPDP Sec 6.3 compliant.</p>
+        <div class="form-group" style="margin-bottom:10px"><label>Signee</label><input type="text" id="esign-doc-name" value="Dr. Vikram Aditya" disabled></div>
+        <div class="form-group"><label>Signature (Click to sign)</label><div class="signature-canvas-sim" id="esign-canvas-sim">Click to sign</div></div>
+      </div>
+      <div class="modal-footer"><button class="glass-btn glass-btn-secondary" onclick="document.getElementById('modal-doctor-esign').classList.remove('open')">Clear</button><button class="glass-btn glass-btn-primary" id="btn-submit-esign">Sign & Finalize</button></div>
+    </div>
+  </div>
+
+  <!-- File Viewer Modal -->
+  <div class="modal-overlay" id="modal-file-viewer">
+    <div class="modal-box" style="max-width:560px">
+      <div class="modal-header"><h3 class="modal-title" id="file-viewer-title">Document</h3><button class="modal-close-btn" onclick="document.getElementById('modal-file-viewer').classList.remove('open')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+      <div class="modal-body" id="file-viewer-body" style="background:var(--bg);min-height:200px;display:flex;align-items:center;justify-content:center"></div>
+      <div class="modal-footer"><button class="glass-btn glass-btn-primary" onclick="document.getElementById('modal-file-viewer').classList.remove('open')">Close</button></div>
+    </div>
+  </div>
+
+  <!-- Staff Detail Modal -->
+  <div class="modal-overlay" id="modal-staff-detail">
+    <div class="modal-box" style="max-width:500px">
+      <div class="modal-header"><h3 class="modal-title">Staff Profile</h3><button class="modal-close-btn" onclick="document.getElementById('modal-staff-detail').classList.remove('open')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+      <div class="modal-body" id="staff-detail-body"></div>
+      <div class="modal-footer"><button class="glass-btn glass-btn-secondary" onclick="document.getElementById('modal-staff-detail').classList.remove('open')">Close</button></div>
+    </div>
+  </div>
+
+  <!-- Webcam Modal -->
+  <div class="modal-overlay" id="modal-webcam">
+    <div class="modal-box" style="max-width:380px">
+      <div class="modal-header"><h3 class="modal-title">Capture Photo</h3><button class="modal-close-btn" onclick="closeWebcam()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+      <div class="modal-body">
+        <div class="webcam-container">
+          <div class="webcam-preview"><video id="webcam-video" autoplay playsinline></video><canvas id="webcam-canvas" style="display:none"></canvas></div>
+          <button class="glass-btn glass-btn-primary" style="width:100%" id="btn-capture-photo" onclick="capturePhoto()">📷 Capture</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== GLASS OVERLAY MODALS ===== -->
+
+  <!-- Department Overview -->
+  <div class="glass-overlay-modal" id="modal-dept-overview">
+    <div class="glass-overlay-backdrop" onclick="closeDeptOverview()"></div>
+    <div class="glass-overlay-content">
+      <div class="glass-overlay-header">
+        <h2 id="dept-overview-title">Department</h2>
+        <button class="glass-overlay-close" onclick="closeDeptOverview()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+      <div class="glass-overlay-body" id="dept-overview-body"><!-- JS --></div>
+    </div>
+  </div>
+
+  <!-- Staff Configure -->
+  <div class="glass-overlay-modal" id="modal-staff-configure">
+    <div class="glass-overlay-backdrop" onclick="closeStaffConfigure()"></div>
+    <div class="glass-overlay-content">
+      <div class="glass-overlay-header">
+        <h2 id="staff-config-title">Staff Configuration</h2>
+        <button class="glass-overlay-close" onclick="closeStaffConfigure()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+      <div class="glass-overlay-body" id="staff-config-body"><!-- JS --></div>
+    </div>
+  </div>
+
+  <!-- Complaint Detail -->
+  <div class="glass-overlay-modal" id="modal-complaint-detail">
+    <div class="glass-overlay-backdrop" onclick="closeComplaintDetail()"></div>
+    <div class="glass-overlay-content">
+      <div class="glass-overlay-header">
+        <h2 id="complaint-detail-title">Complaint Ticket</h2>
+        <button class="glass-overlay-close" onclick="closeComplaintDetail()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+      <div class="glass-overlay-body" id="complaint-detail-body"><!-- JS --></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

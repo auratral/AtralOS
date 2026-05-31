@@ -1,0 +1,16 @@
+{
+  "name": "auratral-healthos",
+  "version": "1.0.0",
+  "description": "Auratral HealthOS — Hospital EHR & Data Management Web Application",
+  "scripts": {
+    "dev": "vite --port 3000 --open",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.2.0"
+  },
+  "dependencies": {
+    "convex": "^1.39.1"
+  }
+}
