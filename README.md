@@ -1,29 +1,31 @@
 # AtralOS (formerly HealthOS) — Hospital EHR & Data Management
 
-AtralOS is a modern, high-fidelity Hospital Electronic Health Records (EHR) and administrative workflow management system. It features client-side Zero-Knowledge Encryption for PII, a reactive Convex.dev backend, and a comprehensive role-based workflow designed to satisfy HIPAA, GDPR, and DPDPA compliance.
+This is a hospital EHR and management tool I built for academic purposes. It's called AtralOS. I wanted to see if I could build a full clinical system that runs on standard web tech without leaking patient details, so it uses client-side AES-GCM-256 encryption. All the PII is scrambled before it ever touches the database, meaning even if the database gets compromised, it's just garbage text.
+
+I migrated the backend from Convex to Firebase. Now it uses Firestore for real-time syncing across all the different desks—reception, nursing, doctors, lab, radiology, pharmacy, and finance. There's also a basic mobile portal simulator. The database has some seed data to get started, and you can switch roles on the fly using the selector at the top. Everything runs out of a vanilla JS and CSS setup, bundled with Vite.
 
 ---
 
-## 🚀 Tech Stack
+## Tech Stack
 
 * **Frontend**: Vanilla HTML5, CSS3, and JavaScript (ES6 Modules) powered by **Vite**.
-* **Database & Realtime Backend**: **Convex** (`convex` NPM package for reactive web socket subscriptions, queries, and mutations).
+* **Database & Realtime Backend**: **Firebase** (using `firebase` SDK for authentication and Cloud Firestore real-time snapshots).
 * **Cryptography**: Client-side **AES-GCM (256-bit)** using the Web Crypto API for zero-knowledge patient data privacy.
 * **CI/CD**: GitHub Actions workflow deploying build output (`./dist`) to GitHub Pages.
 
 ---
 
-## 🤖 Guide for AI Agents (Agentic Instructions)
+## Guide for AI Agents (Agentic Instructions)
 
 If you are an AI agent developer or autonomous coding system working with AtralOS, please refer to this section to understand the layout, system access, and element mapping.
 
-### 🔑 Authentication
+### Authentication
 * **Default Login Page**: Appears as a full-screen glass overlay (`#login-overlay`).
 * **Credentials**:
   * **Username**: `User`
   * **Password**: `Admin123`
 
-### 🗺️ User Roles & Navigation
+### User Roles & Navigation
 The application uses a simulated global environment. After logging in, select roles from the dropdown in the top-right corner of the top navbar (`#global-role-select`) to change panels.
 * **Available Roles**:
   * `admin`: Super Admin dashboard (Staff HR, equipment, complaints, system settings, security, and audit logs).
@@ -36,7 +38,7 @@ The application uses a simulated global environment. After logging in, select ro
   * `finance`: Outpatient invoicing, department revenues, claim pre-auth status.
   * `patient`: Mobile simulator preview of the patient portal.
 
-### 🧩 Key Element Selectors (DOM ID Cheat Sheet)
+### Key Element Selectors (DOM ID Cheat Sheet)
 
 * **Common Elements**:
   * Role Dropdown: `select#global-role-select`
@@ -62,7 +64,7 @@ The application uses a simulated global environment. After logging in, select ro
 
 ---
 
-## 🛠️ Installation & Local Development
+## Installation & Local Development
 
 ### Prerequisites
 * Node.js (v18+)
@@ -71,8 +73,8 @@ The application uses a simulated global environment. After logging in, select ro
 ### Setup
 1. Clone the repository and navigate to the project directory:
    ```bash
-   git clone https://github.com/auratral/AtralOS.git
-   cd AtralOS
+   git clone https://github.com/christopherjeremy/Auratral_EHR.git
+   cd Auratral_EHR
    ```
 2. Install npm dependencies:
    ```bash
@@ -82,28 +84,24 @@ The application uses a simulated global environment. After logging in, select ro
    ```bash
    npm run dev
    ```
-4. Start the Convex local/cloud dev backend:
-   ```bash
-   npx convex dev
-   ```
 
 ---
 
-## 🔒 Security & Regulatory Compliance (HIPAA, GDPR, DPDPA)
+## Security & Regulatory Compliance (HIPAA, GDPR, DPDPA)
 
 1. **Decoupled Demographics & Clinical Readings (HIPAA *Minimum Necessary*)**:
-   * Patient vital signs (`bp`, `temp`, `spo2`, `pulse`, `sugar`) are stored in a standalone `vitals` table.
-   * Demographic data is stored in the `patients` table.
-   * Both tables relate only via a pseudonymized `patientId` string (e.g. `PAT-XXXX`), isolating clinical history from general reception queries.
+   * Patient vital signs (`bp`, `temp`, `spo2`, `pulse`, `sugar`) are stored in a standalone `vitals` collection.
+   * Demographic data is stored in the `patients` collection.
+   * Both collections relate only via a pseudonymized `patientId` string (e.g. `PAT-XXXX`), isolating clinical history from general reception queries.
 2. **Zero-Knowledge Encryption-at-Rest**:
-   * PII attributes (`name`, `dob`, `mobile`, `emergency`, `insurance`, and `abhaId`) are encrypted on the client side using **AES-GCM-256** prior to sending database mutations to Convex.
+   * PII attributes (`name`, `dob`, `mobile`, `emergency`, `insurance`, and `abhaId`) are encrypted on the client side using **AES-GCM-256** prior to sending database mutations to Firestore.
    * Key derivation is managed on-client from the hospital-wide passphrase (`AuratralHospitalOSSecurePIIKey2026!`). The cloud database database contains only encrypted base64 ciphertexts.
 3. **GDPR / DPDPA Consent Log**:
    * Patient portal contains explicit, verifiable toggles for consent to clinical research, secondary academic use, and notification preferences.
 
 ---
 
-## 🔄 Patient Lifecycle Walkthrough (End-to-End Simulation)
+## Patient Lifecycle Walkthrough (End-to-End Simulation)
 
 To test the application's core patient management flow:
 1. **Login**: Go to the site, input `User` / `Admin123`.
