@@ -4413,14 +4413,36 @@ function initLogin() {
         
         STATE.activePanel = ROLE_NAV_CONFIGS[STATE.activeRole][0].id;
         
+        // Update Topnav profile UI
+        const nameEl = document.getElementById('user-display-name');
+        const roleEl = document.getElementById('user-role-display');
+        const avatarEl = document.getElementById('user-avatar-initials');
+        const selectEl = document.getElementById('global-role-select');
+        const selectContainer = document.querySelector('.role-picker-container');
+        
+        if (nameEl) nameEl.textContent = staffDoc.name;
+        if (roleEl) roleEl.textContent = `${staffDoc.role} (${staffDoc.dept || 'No Dept'})`;
+        if (avatarEl) {
+          const initials = staffDoc.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+          avatarEl.textContent = initials;
+        }
+        if (selectEl) selectEl.value = STATE.activeRole;
+        if (selectContainer) {
+          if (staffDoc.role === 'Super Admin') {
+            selectContainer.style.display = 'block';
+          } else {
+            selectContainer.style.display = 'none';
+          }
+        }
+
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('topnav').style.display = 'flex';
-        document.getElementById('sidebar').style.display = 'flex';
-        document.getElementById('main-content').style.display = 'block';
+        document.getElementById('app-layout').style.display = 'flex';
         
         loadFromStorage();
         initRouter();
         initGlobalSearch();
+        initInvestigationChips();
         
         errorMsg.textContent = '';
         showToast(`Logged in locally as ${staffDoc.name} (${staffDoc.role})`);
