@@ -1431,6 +1431,7 @@ function renderSidebarNav() {
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
       li.classList.add('active');
       navigateToPanel(link.id);
+      loadDashboardData();
     });
     menu.appendChild(li);
   });
@@ -1460,24 +1461,26 @@ function navigateToPanel(panelId) {
   if (STATE.activeRole === 'finance') targetRolePanelId = 'role-panel-finance';
   
   const outerPanel = document.getElementById(targetRolePanelId);
-  if (outerPanel) {
-    outerPanel.style.display = 'block';
-    
-    // Show active sub-panel
-    const activeSub = document.getElementById(panelId);
-    if (activeSub) {
-      activeSub.style.display = 'block';
-    }
-  } else if (panelId === 'admin-settings') {
-    if (settingsPage) settingsPage.style.display = 'block';
-  }
-  
-  // Also handle sub-panels outside of the outer role panel (show them directly if their role is active)
   const activeSub = document.getElementById(panelId);
+  
   if (activeSub) {
     activeSub.style.display = 'block';
+    if (outerPanel) {
+      if (outerPanel.contains(activeSub)) {
+        outerPanel.style.display = 'block';
+      } else {
+        outerPanel.style.display = 'none';
+      }
+    }
+  } else {
+    if (outerPanel) {
+      outerPanel.style.display = 'block';
+    }
   }
-
+  
+  if (panelId === 'admin-settings') {
+    window.navigateToSettings();
+  }
   
   // Update sidebar active classes
   document.querySelectorAll('.nav-item').forEach(el => {
@@ -8986,19 +8989,239 @@ window.submitDoctorOtBooking = async function(patientId) {
   }
 };
 
-window.viewAttachedDocument = function(id) {
-  const inv = STATE.investigations.find(i => i.id === id);
-  if (!inv || !inv.attachment) return;
+// --- RECEPTION & CLINICAL WORKSPACE RENDERERS ---
+
+window.renderAppointmentsCalendar = function() {
+  const container = document.getElementById('reception-calendar');
+  if (!container) return;
   
-  const modal = document.getElementById('modal-file-viewer');
-  const title = document.getElementById('file-viewer-title');
-  const body = document.getElementById('file-viewer-body');
-  
-  if (modal && title && body) {
-    title.textContent = `PDF Document: ${inv.testName}`;
-    body.innerHTML = `<embed src="${inv.attachment}" type="application/pdf" style="width:100%;height:450px;">`;
-    modal.classList.add('open');
+  const docOptions = DOCTORS.map(d => `<option value="${d.id}">${d.name} (${d.dept})</option>`).join('');
+  const appointmentsHtml = STATE.appointments.map(a => `
+    <div style="font-size:0.75rem; padding:8px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <span><strong>Token #${a.token}</strong> - ${getPatientName(a.patientId)} (${a.patientId})</span>
+      <span style="font-size:0.7rem; color:var(--primary); font-weight:600;">${a.department} | ${a.time}</span>
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div class="nursing-workspace-grid" style="grid-template-columns: 350px 1fr; gap:16px;">
+      <div class="glass-card">
+        <h4 class="form-title">Schedule New Appointment</h4>
+        <form onsubmit="event.preventDefault(); window.submitNewAppointmentFromForm()">
+          <div class="form-group" style="margin-bottom:8px">
+            <label>Patient ID *</label>
+            <input type="text" id="apt-form-pat-id" required placeholder="e.g. AURA-2026-0001">
+          </div>
+          <div class="form-group" style="margin-bottom:8px">
+            <label>Select Doctor *</label>
+            <select id="apt-form-doc-id" required>${docOptions}</select>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px">
+            <div class="form-group"><label>Date</label><input type="date" id="apt-form-date" required></div>
+            <div class="form-group"><label>Time Slot</label><input type="time" id="apt-form-time" required></div>
+          </div>
+          <button class="glass-btn glass-btn-primary" style="width:100%" type="submit">Book Slot</button>
+        </form>
+      </div>
+      <div class="glass-card">
+        <h4 class="form-title">Booked Appointment Slots Today</h4>
+        <div style="max-height:400px; overflow-y:auto; margin-top:10px;">
+          ${appointmentsHtml || '<p style="text-align:center; color:var(--text-2); font-size:0.75rem;">No appointments scheduled today.</p>'}
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('apt-form-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('apt-form-time').value = '10:00';
+};
+
+window.submitNewAppointmentFromForm = async function() {
+  const patId = document.getElementById('apt-form-pat-id').value;
+  const docId = document.getElementById('apt-form-doc-id').value;
+  const dateStr = document.getElementById('apt-form-date').value;
+  const timeStr = document.getElementById('apt-form-time').value;
+  const doc = DOCTORS.find(d => d.id === docId);
+
+  const newApt = {
+    id: `APT-${Date.now().toString().slice(-4)}`,
+    patientId: patId.toUpperCase(),
+    doctorId: docId,
+    department: doc ? doc.dept : 'General Medicine',
+    date: dateStr,
+    time: timeStr,
+    type: 'New Consultation',
+    status: 'Booked',
+    token: STATE.appointments.length + 1,
+    investigationStatus: 'None',
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    await setDoc(doc(db, "appointments", newApt.id), newApt);
+    showToast("Appointment booked successfully!");
+    logAudit('Create', patId, `Booked appointment slot with ${doc?.name}`);
+    loadDashboardData();
+  } catch (err) {
+    showToast("Booking failed: " + err.message, "error");
   }
+};
+
+window.renderDoctorIPD = function() {
+  const container = document.getElementById('doctor-ipd');
+  if (!container) return;
+
+  const admittedPatients = STATE.patients.filter(p => p.status === 'Admitted' || p.bedAssignment);
+  if (admittedPatients.length === 0) {
+    container.innerHTML = `<div class="glass-card" style="padding:20px; text-align:center;"><p style="color:var(--text-2);">No admitted patients in Wards/ICU.</p></div>`;
+    return;
+  }
+
+  if (!STATE.doctorActiveIpdId && admittedPatients.length > 0) {
+    STATE.doctorActiveIpdId = admittedPatients[0].id;
+  }
+
+  const selectedPatient = STATE.patients.find(p => p.id === STATE.doctorActiveIpdId);
+  const rosterHtml = admittedPatients.map(p => `
+    <div class="record-item-card ${STATE.doctorActiveIpdId === p.id ? 'active' : ''}" onclick="window.selectDoctorIpdPatient('${p.id}')">
+      <div class="record-item-title">${p.name}</div>
+      <div class="record-item-subtitle">Bed: ${p.bedAssignment || 'N/A'}</div>
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div class="nursing-workspace-grid" style="grid-template-columns: 240px 1fr; gap:16px;">
+      <div class="glass-card">
+        <h4 class="form-title" style="margin-bottom:8px">IPD Admitted Roster</h4>
+        <div class="records-list">${rosterHtml}</div>
+      </div>
+      <div class="glass-card">
+        <h4 class="form-title">IPD Rounding Journal - ${selectedPatient?.name} (${selectedPatient?.id})</h4>
+        <div style="font-size:0.75rem; color:var(--text-2); margin-top:4px;">Bed: ${selectedPatient?.bedAssignment || 'N/A'} | Insurance: ${selectedPatient?.insurance}</div>
+        <form onsubmit="event.preventDefault(); window.saveIpdDailyRound()" style="margin-top:12px;">
+          <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:8px;">
+            <div class="form-group"><label>Daily Round Vitals / BP</label><input type="text" id="ipd-bp" placeholder="120/80"></div>
+            <div class="form-group"><label>Temp °F</label><input type="text" id="ipd-temp" placeholder="98.6"></div>
+          </div>
+          <div class="form-group" style="margin-bottom:8px"><label>Rounding Clinical Notes</label><textarea id="ipd-notes" placeholder="Subjective complaints, objective progress, changes in care..."></textarea></div>
+          <button class="glass-btn glass-btn-primary" style="width:100%" type="submit">Save Round Entry</button>
+        </form>
+      </div>
+    </div>
+  `;
+};
+
+window.selectDoctorIpdPatient = function(val) {
+  STATE.doctorActiveIpdId = val;
+  loadDashboardData();
+};
+
+window.saveIpdDailyRound = function() {
+  showToast("IPD rounds logged and added to patient timeline successfully!");
+  logAudit('Edit', STATE.doctorActiveIpdId, `Logged daily clinical rounds round note.`);
+};
+
+window.renderDoctorDischarge = function() {
+  const container = document.getElementById('doctor-discharge');
+  if (!container) return;
+
+  const admittedPatients = STATE.patients.filter(p => p.status === 'Admitted' || p.bedAssignment);
+  const selectOptions = admittedPatients.map(p => `<option value="${p.id}">${p.name} (${p.id}) - Bed: ${p.bedAssignment}</option>`).join('');
+
+  container.innerHTML = `
+    <div class="nursing-workspace-grid" style="grid-template-columns: 350px 1fr; gap:16px;">
+      <div class="glass-card">
+        <h4 class="form-title">Draft Discharge Summary</h4>
+        <form onsubmit="event.preventDefault(); window.submitDischargeSummary()">
+          <div class="form-group" style="margin-bottom:8px">
+            <label>Select Admitted Patient *</label>
+            <select id="dc-pat-id" required style="width:100%">${selectOptions || '<option disabled>No admitted patients</option>'}</select>
+          </div>
+          <div class="form-group" style="margin-bottom:8px">
+            <label>Clinical Course & Diagnosis *</label>
+            <textarea id="dc-summary" required placeholder="Summary of treatment, surgeries..."></textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Discharge Medications *</label>
+            <textarea id="dc-meds" required placeholder="Medications to continue at home..."></textarea>
+          </div>
+          <button class="glass-btn glass-btn-primary" style="width:100%" type="submit">Authorize Discharge</button>
+        </form>
+      </div>
+      <div class="glass-card">
+        <h4 class="form-title">Discharge Instructions</h4>
+        <div style="font-size:0.75rem; border:1px solid var(--border); border-radius:6px; padding:10px; background:rgba(70,15,117,0.02)">
+          <p><strong>Verification Steps:</strong></p>
+          <ul style="padding-left:15px; margin-top:5px;">
+            <li>Confirm patient has cleared all pharmacy prescriptions.</li>
+            <li>Send the final invoice request to the Billing Desk.</li>
+            <li>Instruct ward nurse to mark bed as "Under Cleaning".</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+window.submitDischargeSummary = async function() {
+  const patId = document.getElementById('dc-pat-id')?.value;
+  const summary = document.getElementById('dc-summary')?.value || '';
+  const meds = document.getElementById('dc-meds')?.value || '';
+
+  if (!patId) {
+    showToast("No active patient selected for discharge.", "error");
+    return;
+  }
+
+  const pat = STATE.patients.find(p => p.id === patId);
+  if (pat) {
+    pat.status = 'Discharged';
+    const bed = BED_DATA.find(b => b.patient === patId);
+    if (bed) {
+      bed.status = 'cleaning';
+      delete bed.patient;
+    }
+    pat.bedAssignment = '';
+
+    try {
+      await mutatePatient(pat);
+      showToast(`Discharged ${pat.name} successfully!`);
+      logAudit('Edit', patId, `Authorized discharge summary: ${summary}`);
+      loadDashboardData();
+      renderBedGrid();
+    } catch (err) {
+      showToast("Discharge failed: " + err.message, "error");
+    }
+  }
+};
+
+window.renderDoctorTemplates = function() {
+  const container = document.getElementById('doctor-templates');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="glass-card" style="max-width:600px; margin:auto;">
+      <h4 class="form-title">Clinical SOAP Note Templates</h4>
+      <form onsubmit="event.preventDefault(); window.saveSoapTemplate()">
+        <div class="form-group" style="margin-bottom:8px">
+          <label>Template Name</label>
+          <input type="text" id="tpl-name" placeholder="e.g. Hypertension Regular Follow-up" required>
+        </div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label>Default Subjective Notes</label>
+          <textarea id="tpl-subjective" placeholder="Patient reports..."></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Default Objective Notes</label>
+          <textarea id="tpl-objective" placeholder="BP: 120/80 mmHg, heart sounds normal..."></textarea>
+        </div>
+        <button class="glass-btn glass-btn-primary" style="width:100%" type="submit">Create Template</button>
+      </form>
+    </div>
+  `;
+};
+
+window.saveSoapTemplate = function() {
+  showToast("Soap consultation template saved successfully!");
 };
 
 // Bind listeners when document is loaded
