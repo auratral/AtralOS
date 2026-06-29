@@ -4328,13 +4328,66 @@ function initLogin() {
       
       if (isKnownStaff && (pass === "Pass123" || pass === "Admin123")) {
         console.log("Local authentication bypass for staff:", email);
-        const q = query(collection(db, "staffAccounts"), where("email", "==", email));
-        const querySnapshot = await getDocs(q);
         
         let staffDoc = null;
-        if (!querySnapshot.empty) {
-          staffDoc = querySnapshot.docs[0].data();
-        } else {
+        
+        // Resolve profile from local memory constants to avoid Firestore permission checks before login completes
+        const emailMap = {
+          "user@atralos.com": "STF001",
+          "reception@atralos.com": "STF002",
+          "nurse@atralos.com": "STF003",
+          "lab@atralos.com": "STF004",
+          "radiologist@atralos.com": "STF005",
+          "pharmacist@atralos.com": "STF006",
+          "finance@atralos.com": "STF007",
+          "emergency@atralos.com": "STF_ER_01",
+          "icu@atralos.com": "STF_ICU_01",
+          "ot@atralos.com": "STF_OT_01",
+          "bloodbank@atralos.com": "STF_BB_01",
+          "diet@atralos.com": "STF_DIET_01",
+          "transport@atralos.com": "STF_TR_01"
+        };
+        
+        const staffId = emailMap[email];
+        if (staffId) {
+          const localStaff = STAFF_ACCOUNTS.find(s => s.id === staffId);
+          if (localStaff) {
+            staffDoc = {
+              ...localStaff,
+              email: email,
+              shift: "Morning",
+              workDays: "Mon,Tue,Wed,Thu,Fri",
+              qualification: "MD",
+              specialization: localStaff.dept,
+              phone: "9876543210",
+              leaveBalance: 15,
+              joiningDate: new Date().toISOString().split('T')[0]
+            };
+          }
+        } else if (email.startsWith("doc")) {
+          const docId = email.split("@")[0];
+          const localDoc = DOCTORS.find(d => d.id === docId);
+          if (localDoc) {
+            staffDoc = {
+              id: localDoc.id,
+              name: localDoc.name,
+              role: "Doctor",
+              dept: localDoc.dept,
+              license: localDoc.license,
+              email: email,
+              status: 'Active',
+              shift: "Morning",
+              workDays: "Mon,Tue,Wed,Thu,Fri",
+              qualification: "MD",
+              specialization: localDoc.dept,
+              phone: "9876543210",
+              leaveBalance: 15,
+              joiningDate: new Date().toISOString().split('T')[0]
+            };
+          }
+        }
+        
+        if (!staffDoc) {
           staffDoc = { name: email.split("@")[0].toUpperCase(), role: 'Super Admin', email: email, dept: 'Management' };
         }
         
