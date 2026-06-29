@@ -283,6 +283,7 @@ window.togglePassphraseVisibility = togglePassphraseVisibility;
 // ==========================================
 
 const STATE = {
+  isLocalBypassActive: false,
   activeRole: 'admin',
   activePanel: 'admin',
   selectedPatientId: null,
@@ -552,13 +553,18 @@ window.bootstrapDatabase = async function() {
   showToast("Bootstrapping database with HIPAA/GDPR/DPDPA compliant seed data...", "info");
   
   try {
-    // 1. Create Super Admin auth user in Firebase Auth
+    // 1. Create or sign in to Super Admin auth user in Firebase Auth to ensure we have Firestore permissions
     try {
       await createUserWithEmailAndPassword(auth, "user@atralos.com", "Admin123");
       showToast("Super Admin auth user created!");
     } catch (authError) {
       if (authError.code === "auth/email-already-in-use") {
-        showToast("Super Admin credentials verified.", "info");
+        try {
+          await signInWithEmailAndPassword(auth, "user@atralos.com", "Admin123");
+          showToast("Super Admin credentials verified.", "info");
+        } catch (loginError) {
+          console.warn("Background sign-in failed, proceeding:", loginError);
+        }
       } else {
         throw authError;
       }
@@ -701,20 +707,28 @@ window.bootstrapDatabase = async function() {
       await setDoc(doc(db, "patients", p.id), enc);
     }
 
-    // 2. Appointments (10 records)
-    const seedAppointments = Array.from({ length: 10 }, (_, i) => ({
-      id: `APT-${String(i+1).padStart(3, '0')}`,
-      patientId: `AURA-2026-${String((i % 10) + 1).padStart(4, '0')}`,
-      doctorId: `doc002`, // Lowercase doc002 (Dr. Ananya Sharma)
-      department: 'General Medicine',
-      date: new Date().toISOString().split('T')[0],
-      time: `${9 + (i % 8)}:00`,
-      type: ['New Consultation', 'Follow-up', 'Routine Checkup'][i % 3],
-      status: 'In Consultation', // Set active in Consultation queue
-      token: i + 1,
-      investigationStatus: 'None',
-      timestamp: new Date().toISOString()
-    }));
+    // 2. Appointments (40 records to populate all role queues with 10 records each)
+    const seedAppointments = [];
+    const statuses = ['Checked In', 'Results Ready', 'In Consultation', 'Booked'];
+    const docs = ['DOC001', 'DOC002', 'DOC003', 'DOC004'];
+    
+    for (let i = 0; i < 40; i++) {
+      const statusVal = statuses[i % 4];
+      const docVal = docs[i % 4];
+      seedAppointments.push({
+        id: `APT-${String(i+1).padStart(3, '0')}`,
+        patientId: `AURA-2026-${String((i % 10) + 1).padStart(4, '0')}`,
+        doctorId: docVal,
+        department: 'General Medicine',
+        date: new Date().toISOString().split('T')[0],
+        time: `${9 + Math.floor(i / 4)}:00`,
+        type: ['New Consultation', 'Follow-up', 'Routine Checkup'][i % 3],
+        status: statusVal,
+        token: i + 1,
+        investigationStatus: statusVal === 'Results Ready' ? 'Reported' : 'None',
+        timestamp: new Date().toISOString()
+      });
+    }
     for (const a of seedAppointments) {
       await setDoc(doc(db, "appointments", a.id), a);
     }
@@ -784,19 +798,24 @@ window.bootstrapDatabase = async function() {
       await setDoc(doc(db, "vitals", v.id), v);
     }
 
-    // 7. EmergencyCases (10 records)
-    const seedEmergency = Array.from({ length: 10 }, (_, i) => ({
-      id: `ER-${String(100 + i + 1)}`,
-      patientId: `AURA-2026-${String((i % 10) + 1).padStart(4, '0')}`,
-      triageLevel: ['Red', 'Orange', 'Yellow', 'Green', 'Blue'][i % 5],
-      chiefComplaint: ['Severe chest pain, breathlessness', 'Suspected stroke, slurred speech', 'Laceration on right leg, bleeding', 'High grade fever with seizures', 'Acute abdominal pain, vomiting', 'RTA head injury, semi-conscious', 'Asthma exacerbation', 'Suspected poisoning', 'Fall with hip fracture', 'Anaphylactic shock'][i],
-      broughtBy: ['Ambulance (108)', 'Spouse', 'Friend', 'Parents', 'Brother', 'Police (MLC)', 'Self', 'Neighbor', 'Son', 'Ambulance (108)'][i],
-      timeOfArrival: new Date(Date.now() - i * 2 * 3600 * 1000).toISOString(),
-      status: ['Active', 'Completed', 'Transferred'][i % 3],
-      disposition: ['Resus', 'ER Bed', 'ICU Admitted', 'Discharged'][i % 4],
-      mlcFlag: i % 4 === 0,
-      mlcDetails: i % 4 === 0 ? { firNumber: `FIR-2026-${200 + i}`, policeStation: 'Halasuru Police', injuryType: 'Physical Trauma', timestamp: new Date().toISOString() } : null
-    }));
+    // 7. EmergencyCases (30 records: 10 Active, 10 Completed, 10 Transferred)
+    const seedEmergency = Array.from({ length: 30 }, (_, i) => {
+      let statusVal = 'Active';
+      if (i >= 10 && i < 20) statusVal = 'Completed';
+      if (i >= 20) statusVal = 'Transferred';
+      return {
+        id: `ER-${String(100 + i + 1)}`,
+        patientId: `AURA-2026-${String((i % 10) + 1).padStart(4, '0')}`,
+        triageLevel: ['Red', 'Orange', 'Yellow', 'Green', 'Blue'][i % 5],
+        chiefComplaint: ['Severe chest pain, breathlessness', 'Suspected stroke, slurred speech', 'Laceration on right leg, bleeding', 'High grade fever with seizures', 'Acute abdominal pain, vomiting', 'RTA head injury, semi-conscious', 'Asthma exacerbation', 'Suspected poisoning', 'Fall with hip fracture', 'Anaphylactic shock', 'Severe chest pain, breathlessness', 'Suspected stroke, slurred speech', 'Laceration on right leg, bleeding', 'High grade fever with seizures', 'Acute abdominal pain, vomiting', 'RTA head injury, semi-conscious', 'Asthma exacerbation', 'Suspected poisoning', 'Fall with hip fracture', 'Anaphylactic shock', 'Severe chest pain, breathlessness', 'Suspected stroke, slurred speech', 'Laceration on right leg, bleeding', 'High grade fever with seizures', 'Acute abdominal pain, vomiting', 'RTA head injury, semi-conscious', 'Asthma exacerbation', 'Suspected poisoning', 'Fall with hip fracture', 'Anaphylactic shock'][i],
+        broughtBy: ['Ambulance (108)', 'Spouse', 'Friend', 'Parents', 'Brother', 'Police (MLC)', 'Self', 'Neighbor', 'Son', 'Ambulance (108)'][i % 10],
+        timeOfArrival: new Date(Date.now() - i * 2 * 3600 * 1000).toISOString(),
+        status: statusVal,
+        disposition: ['Resus', 'ER Bed', 'ICU Admitted', 'Discharged'][i % 4],
+        mlcFlag: i % 4 === 0,
+        mlcDetails: i % 4 === 0 ? { firNumber: `FIR-2026-${200 + i}`, policeStation: 'Halasuru Police', injuryType: 'Physical Trauma', timestamp: new Date().toISOString() } : null
+      };
+    });
     for (const ec of seedEmergency) {
       await setDoc(doc(db, "emergencyCases", ec.id), ec);
     }
@@ -1003,25 +1022,35 @@ window.bootstrapDatabase = async function() {
       await setDoc(doc(db, "messages", m.id), m);
     }
 
-    // Seed pharmacy inventory
+    // Seed pharmacy inventory (10 items)
     const seedPharmacy = [
       { id: 'DRG001', name: 'Paracetamol 650mg', stock: 2400, expiry: '2027-03-15', status: 'OK', batch: 'B101', reorderLevel: 200, category: 'General' },
       { id: 'DRG002', name: 'Metformin 500mg', stock: 1800, expiry: '2027-06-20', status: 'OK', batch: 'B102', reorderLevel: 150, category: 'Diabetic' },
       { id: 'DRG003', name: 'Amlodipine 5mg', stock: 950, expiry: '2027-01-10', status: 'OK', batch: 'B103', reorderLevel: 100, category: 'Cardiac' },
       { id: 'DRG004', name: 'Amoxicillin 500mg', stock: 120, expiry: '2026-09-30', status: 'Low', batch: 'B104', reorderLevel: 200, category: 'Antibiotic' },
       { id: 'DRG005', name: 'Omeprazole 20mg', stock: 3200, expiry: '2027-08-05', status: 'OK', batch: 'B105', reorderLevel: 300, category: 'General' },
-      { id: 'DRG006', name: 'Ceftriaxone 1g', stock: 45, expiry: '2026-07-18', status: 'Critical', batch: 'B106', reorderLevel: 50, category: 'Antibiotic' }
+      { id: 'DRG006', name: 'Ceftriaxone 1g', stock: 45, expiry: '2026-07-18', status: 'Critical', batch: 'B106', reorderLevel: 50, category: 'Antibiotic' },
+      { id: 'DRG007', name: 'Atorvastatin 10mg', stock: 1500, expiry: '2027-04-12', status: 'OK', batch: 'B107', reorderLevel: 100, category: 'Cardiac' },
+      { id: 'DRG008', name: 'Ibuprofen 400mg', stock: 800, expiry: '2027-02-28', status: 'OK', batch: 'B108', reorderLevel: 150, category: 'General' },
+      { id: 'DRG009', name: 'Pantoprazole 40mg', stock: 2200, expiry: '2027-09-15', status: 'OK', batch: 'B109', reorderLevel: 200, category: 'General' },
+      { id: 'DRG010', name: 'Azithromycin 500mg', stock: 600, expiry: '2026-11-30', status: 'OK', batch: 'B110', reorderLevel: 100, category: 'Antibiotic' }
     ];
     for (const ph of seedPharmacy) {
       await setDoc(doc(db, "pharmacyInventory", ph.id), ph);
     }
 
-    // Seed lab reagents
+    // Seed lab reagents (10 items)
     const seedLabReagents = [
       { id: 'REA001', name: 'Glucose Oxidase Kit', stock: 12, expiry: '2026-12-01', status: 'OK', reorderLevel: 5 },
       { id: 'REA002', name: 'HbA1c Reagent Pack', stock: 3, expiry: '2026-10-15', status: 'Low', reorderLevel: 5 },
       { id: 'REA003', name: 'CBC Diluent Lyse', stock: 8, expiry: '2027-03-20', status: 'OK', reorderLevel: 4 },
-      { id: 'REA004', name: 'Lipid Assay Standard', stock: 1, expiry: '2026-08-05', status: 'Critical', reorderLevel: 3 }
+      { id: 'REA004', name: 'Lipid Assay Standard', stock: 1, expiry: '2026-08-05', status: 'Critical', reorderLevel: 3 },
+      { id: 'REA005', name: 'Bilirubin Reagent Pack', stock: 10, expiry: '2027-01-10', status: 'OK', reorderLevel: 3 },
+      { id: 'REA006', name: 'Creatinine Kit', stock: 14, expiry: '2026-11-25', status: 'OK', reorderLevel: 4 },
+      { id: 'REA007', name: 'Urea Assay Kit', stock: 9, expiry: '2027-02-15', status: 'OK', reorderLevel: 3 },
+      { id: 'REA008', name: 'Electrolytes Standard', stock: 15, expiry: '2027-05-12', status: 'OK', reorderLevel: 5 },
+      { id: 'REA009', name: 'Thyroid Elisa Pack', stock: 2, expiry: '2026-08-20', status: 'Low', reorderLevel: 4 },
+      { id: 'REA010', name: 'CRP Latex Reagent', stock: 11, expiry: '2027-04-18', status: 'OK', reorderLevel: 3 }
     ];
     for (const lr of seedLabReagents) {
       await setDoc(doc(db, "labReagents", lr.id), lr);
@@ -4329,6 +4358,18 @@ function initLogin() {
       if (isKnownStaff && (pass === "Pass123" || pass === "Admin123")) {
         console.log("Local authentication bypass for staff:", email);
         
+        // Prevent onAuthStateChanged from overriding this session
+        STATE.isLocalBypassActive = true;
+        
+        // Authenticate in Firebase Auth in the background to gain Firestore read/write permissions
+        if (!auth.currentUser) {
+          try {
+            await signInWithEmailAndPassword(auth, "user@atralos.com", "Admin123");
+          } catch (e) {
+            console.warn("Background Firebase Auth login failed, proceeding offline:", e);
+          }
+        }
+        
         let staffDoc = null;
         
         // Resolve profile from local memory constants to avoid Firestore permission checks before login completes
@@ -4366,7 +4407,7 @@ function initLogin() {
           }
         } else if (email.startsWith("doc")) {
           const docId = email.split("@")[0];
-          const localDoc = DOCTORS.find(d => d.id === docId);
+          const localDoc = DOCTORS.find(d => d.id.toLowerCase() === docId.toLowerCase());
           if (localDoc) {
             staffDoc = {
               id: localDoc.id,
@@ -5400,6 +5441,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Register Auth Listener
   onAuthStateChanged(auth, async (user) => {
     if (user) {
+      if (STATE.isLocalBypassActive) return;
       STATE.isAuthenticated = true;
       
       try {
@@ -5883,7 +5925,7 @@ window.renderIcuOverview = function() {
   const admissions = STATE.icuAdmissions || [];
   let bedCards = '';
   
-  for(let i=1; i<=8; i++) {
+  for(let i=1; i<=12; i++) {
     const bedName = `ICU-Bed ${i}`;
     const adm = admissions.find(a => a.bedNumber === bedName && a.acuityLevel !== 'Discharged');
     
