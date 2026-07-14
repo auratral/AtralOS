@@ -43,28 +43,27 @@
   <!-- ========== TOP NAVIGATION ========== -->
   <nav class="topnav" id="topnav" style="display:none">
     <div class="topnav-brand">
-      <div class="logo-icon">A</div>
-      <div class="logo-text">
-        <span class="logo-title">HealthOS</span>
-        <span class="logo-subtitle">Auratral Dataspace</span>
+      <div class="topnav-logo">A</div>
+      <div class="topnav-title-wrapper">
+        <span class="topnav-title">HealthOS</span>
+        <span class="topnav-sub">Auratral Dataspace</span>
       </div>
     </div>
-    <div class="topnav-controls">
-      <div class="search-wrapper" id="global-search-container">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" class="search-input" id="global-patient-search" placeholder="Search patient..." autocomplete="off">
-        <div class="autocomplete-dropdown" id="global-search-results" style="display:none"></div>
+    <div class="topnav-actions">
+      <div class="topnav-search" id="global-search-container">
+        <input type="text" id="global-patient-search" placeholder="Search patient..." autocomplete="off">
+        <div class="search-results-dropdown" id="global-search-results"></div>
       </div>
       <div class="notification-bell" id="notification-bell" onclick="toggleNotifications()">
         <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
         <span class="notification-count" id="notification-count">0</span>
         <div class="notification-dropdown" id="notification-dropdown"></div>
       </div>
-      <button class="topnav-settings-btn" id="btn-topnav-settings" onclick="navigateToSettings()">
-        <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      <button class="btn-signout" id="btn-topnav-settings" onclick="navigateToSettings()" style="color: var(--text-1) !important;">
+        <svg viewBox="0 0 24 24" style="stroke: var(--text-2); fill: none; stroke-width: 2; width: 14px; height: 14px;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
         Settings
       </button>
-      <button class="topnav-settings-btn" id="btn-topnav-logout" onclick="logoutFirebase()" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgb(239, 68, 68); color: rgb(239, 68, 68); display: inline-flex; align-items: center; gap: 4px;">
+      <button class="btn-signout" id="btn-topnav-logout" onclick="logoutFirebase()" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgb(239, 68, 68); color: rgb(239, 68, 68) !important; display: inline-flex; align-items: center; gap: 4px;">
         <svg viewBox="0 0 24 24" style="stroke: rgb(239, 68, 68); fill: none; stroke-width: 2; width: 14px; height: 14px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
         Sign Out
       </button>
@@ -108,9 +107,10 @@
     <!-- ========== MAIN CONTENT ========== -->
     <div class="main-content" id="main-content">
       <div class="page-header">
-      <h1 class="page-title" id="current-panel-title">Dashboard</h1>
-      <p class="page-subtitle" id="current-panel-subtitle">Overview</p>
-    </div>
+        <h1 class="page-title" id="current-panel-title">Dashboard</h1>
+        <span class="page-header-divider">·</span>
+        <p class="page-subtitle" id="current-panel-subtitle">Overview</p>
+      </div>
 
     <!-- ====== 1. SUPER ADMIN PANEL ====== -->
     <div class="role-panel" id="role-panel-admin" style="display:none">
