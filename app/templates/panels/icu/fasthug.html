@@ -1,0 +1,43 @@
+<div class="page-header" style="margin-bottom: 20px;">
+  <h2>FAST HUG ICU Checklist</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">ICU bedside checklist tracking: Feeding, Analgesia, Sedation, Thromboembolic prophylaxis, Head-of-bed elevation, Ulcer prophylaxis, Glucose control</p>
+</div>
+
+<div class="glass-card" style="padding: 20px; max-width: 600px;">
+  <h3 class="form-title" style="margin-top: 0; margin-bottom: 15px;">FAST HUG Daily Check</h3>
+  
+  <form hx-post="/api/v1/icu/fasthug" hx-target="#fasthug-message" hx-swap="innerHTML">
+    <div class="form-group" style="margin-bottom: 15px;">
+      <label>ICU Bed Number *</label>
+      <input type="text" name="bed_number" required placeholder="Bed 3" style="width: 100%; box-sizing: border-box;">
+    </div>
+    
+    <div style="border-top: 1px solid var(--border); padding-top: 8px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.6;">
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 6px;">
+        <input type="checkbox" name="feeding" checked value="true"> <strong>F</strong>eeding: Tube feeding initiated or patient eating
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 6px;">
+        <input type="checkbox" name="analgesia" checked value="true"> <strong>A</strong>nalgesia: Pain assessed and controlled
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 6px;">
+        <input type="checkbox" name="sedation" checked value="true"> <strong>S</strong>edation: RASS target evaluated
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 6px;">
+        <input type="checkbox" name="thrombo" checked value="true"> <strong>T</strong>hromboembolic prophylaxis: LMWH or SCDs in place
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 6px;">
+        <input type="checkbox" name="head" checked value="true"> <strong>H</strong>ead of bed elevated (30-45 degrees)
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 6px;">
+        <input type="checkbox" name="ulcer" checked value="true"> <strong>U</strong>lcer prophylaxis: PPI or H2RA administered
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <input type="checkbox" name="glucose" checked value="true"> <strong>G</strong>lucose control: Target range 140-180 mg/dL met
+      </label>
+    </div>
+    
+    <button type="submit" class="btn-login" style="width: 100%;">Record FAST HUG Check</button>
+  </form>
+  
+  <div id="fasthug-message"></div>
+</div>

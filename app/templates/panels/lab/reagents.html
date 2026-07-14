@@ -1,0 +1,100 @@
+<div class="page-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+  <div>
+    <h2>Laboratory Reagents</h2>
+    <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Track diagnostic reagent volumes, logs, and reorder warnings</p>
+  </div>
+  <button class="glass-btn glass-btn-primary" 
+          hx-get="/api/v1/lab/reagents/order-modal" 
+          hx-target="#glass-modal-container" 
+          @click="modalOpen = true"
+          style="padding: 6px 16px; font-size: 0.82rem; font-weight: 700;">
+    📦 Order Reagents
+  </button>
+</div>
+
+<div x-data="{ activeTab: 'stock' }" 
+     hx-get="/dashboard/panel?role=lab&panel=reagents" 
+     hx-trigger="refresh-reagents-list from:body" 
+     hx-target="#main-panel-content">
+  
+  <!-- Tab selectors -->
+  <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+    <button class="glass-btn" :class="{ 'glass-btn-primary active': activeTab === 'stock' }" @click="activeTab = 'stock'" style="font-size: 0.85rem; padding: 6px 16px;">
+      Active Stock Inventory
+    </button>
+    <button class="glass-btn" :class="{ 'glass-btn-primary active': activeTab === 'logs' }" @click="activeTab = 'logs'" style="font-size: 0.85rem; padding: 6px 16px;">
+      Reagent Usage & Audit Logs
+    </button>
+  </div>
+
+  <!-- TAB 1: ACTIVE REAGENT INVENTORY -->
+  <div x-show="activeTab === 'stock'" class="glass-card" style="padding: 16px;">
+    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Reagent Code</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Reagent Name</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Stock Volume</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Reorder Level</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Expiry Date</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for reagent in reagents %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 10px 12px; font-weight: 600; color: var(--text-1); font-family: monospace;">{{ reagent.id }}</td>
+            <td style="padding: 10px 12px; font-weight: 700; color: var(--primary);">{{ reagent.name }}</td>
+            <td style="padding: 10px 12px; color: var(--text-1); font-weight: 600;">{{ reagent.stock }} Kits / Vials</td>
+            <td style="padding: 10px 12px; color: var(--text-2);">{{ reagent.reorder_level }} Kits</td>
+            <td style="padding: 10px 12px; color: var(--text-3); font-size: 0.78rem;">{{ reagent.expiry }}</td>
+            <td style="padding: 10px 12px;">
+              <span class="status-indicator {% if reagent.status == 'OK' %}status-active{% else %}status-canceled{% endif %}">
+                {{ reagent.status }}
+              </span>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" style="padding: 20px; text-align: center; color: var(--text-3);">No reagents in database.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TAB 2: REAGENT USAGE & AUDIT LOG FILE -->
+  <div x-show="activeTab === 'logs'" class="glass-card" style="padding: 16px;">
+    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Log ID</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Date & Time</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Reagent Name</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Action Details</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Qty Change</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Logged By</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 10px 12px; font-weight: 600; color: var(--text-1); font-family: monospace; font-size: 0.75rem;">{{ log.id }}</td>
+            <td style="padding: 10px 12px; color: var(--text-3); font-size: 0.78rem;">{{ log.timestamp }}</td>
+            <td style="padding: 10px 12px; font-weight: 700; color: var(--primary);">{{ log.reagent_name }}</td>
+            <td style="padding: 10px 12px; color: var(--text-2); font-weight: 500;">{{ log.action }}</td>
+            <td style="padding: 10px 12px; font-weight: 600; {% if log.quantity > 0 %}color: var(--success);{% else %}color: var(--danger);{% endif %}">
+              {% if log.quantity > 0 %}+{% endif %}{{ log.quantity }}
+            </td>
+            <td style="padding: 10px 12px; color: var(--text-2); font-size: 0.78rem;">{{ log.user_name }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" style="padding: 20px; text-align: center; color: var(--text-3);">No reagent audits or logs found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>

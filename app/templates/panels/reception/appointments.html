@@ -1,0 +1,44 @@
+<div class="page-header" style="margin-bottom: 24px;">
+  <h2>OPD Appointment Booking</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Schedule outpatient consultations and allocate tokens</p>
+</div>
+
+<div class="glass-card" style="max-width: 600px;">
+  <h3 class="form-title" style="margin-top: 0; margin-bottom: 15px;">Book New Appointment</h3>
+  
+  <form hx-post="/api/v1/appointments/book" hx-target="#booking-message" hx-swap="innerHTML">
+    
+    <div class="form-group">
+      <label>Patient ID (UHID) *</label>
+      <input type="text" name="patient_id" required placeholder="AURA-2026-0001" style="width: 100%; box-sizing: border-box;">
+    </div>
+    
+    <div class="form-group" style="margin-top: 14px;">
+      <label>Consultant Doctor *</label>
+      <select name="doctor_email" style="width: 100%; box-sizing: border-box;" required>
+        {% for doc in doctors %}
+          <option value="{{ doc.email }}">{{ doc.name }} ({{ doc.department_id }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <div class="grid-2" style="margin-top: 14px; margin-bottom: 20px;">
+      <div class="form-group">
+        <label>Visit Type</label>
+        <select name="appt_type" style="width: 100%; box-sizing: border-box;">
+          <option>OPD Consultation</option>
+          <option>Follow-up</option>
+          <option>Emergency</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Appointment Time *</label>
+        <input type="time" name="appt_time" required value="09:00" style="width: 100%; box-sizing: border-box;">
+      </div>
+    </div>
+    
+    <button type="submit" class="btn-login" style="width: 100%;">Book Appointment & Generate Token</button>
+  </form>
+  
+  <div id="booking-message"></div>
+</div>

@@ -1,0 +1,99 @@
+<div class="page-header" style="margin-bottom: 24px;">
+  <div style="display: flex; flex-direction: column;">
+    <h2 style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--text-1); margin: 0;">Device & Asset Management</h2>
+    <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Register new medical devices, schedule maintenance, and track operational status</p>
+  </div>
+</div>
+
+<div class="workspace-grid">
+  
+  <!-- Left Column: Device Registration Form -->
+  <div class="glass-card">
+    <h3 class="form-title" style="margin-top: 0; margin-bottom: 15px;">Register New Device</h3>
+    
+    <form hx-post="/api/v1/admin/register-device" hx-target="#device-registration-message" hx-swap="innerHTML" @submit="this.reset()">
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Device Name *</label>
+          <input type="text" name="name" required placeholder="Defibrillator Mindray D3" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Device Type *</label>
+          <select name="type" required style="width: 100%; box-sizing: border-box;">
+            <option>Monitoring</option>
+            <option>Life Support</option>
+            <option>Diagnostic</option>
+            <option>Therapeutic</option>
+            <option>Surgical</option>
+            <option>Lab Analyzer</option>
+            <option>Imaging</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Assigned Department *</label>
+          <select name="department" required style="width: 100%; box-sizing: border-box;">
+            {% for dept in departments %}
+              <option value="{{ dept.id }}">{{ dept.name }} ({{ dept.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Physical Location *</label>
+          <input type="text" name="location" required placeholder="ICU Bed 3 / OT Room 2" style="width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Serial Number *</label>
+          <input type="text" name="serial_number" required placeholder="SN-8973-X" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Current Status</label>
+          <select name="status" style="width: 100%; box-sizing: border-box;">
+            <option value="Active">Active / Operational</option>
+            <option value="Maintenance">Under Maintenance</option>
+            <option value="Decommissioned">Decommissioned</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Last Service Date *</label>
+          <input type="date" name="last_service_date" required style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Maintenance Due Date *</label>
+          <input type="date" name="maintenance_due" required style="width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+      
+      <div class="form-group" style="margin-top: 12px;">
+        <label>Operational Notes</label>
+        <textarea name="notes" placeholder="Specify calibration details or warnings..." style="width: 100%; box-sizing: border-box;"></textarea>
+      </div>
+      
+      <button type="submit" class="btn-login" style="width: 100%; margin-top: 18px;">Register & Add to Asset Registry</button>
+    </form>
+    
+    <div id="device-registration-message" style="margin-top: 12px;"></div>
+  </div>
+  
+  <!-- Right Column: Devices Directory -->
+  <div class="glass-card" style="display: flex; flex-direction: column;">
+    <h3 class="form-title" style="margin-top: 0; margin-bottom: 15px;">Active Asset Registry</h3>
+    
+    <div id="devices-table-container"
+         hx-get="/api/v1/admin/devices-table"
+         hx-trigger="load, refresh-devices-list from:body">
+      <div style="text-align: center; padding: 40px; color: var(--text-3);">
+        Loading Asset Registry...
+      </div>
+    </div>
+  </div>
+
+</div>

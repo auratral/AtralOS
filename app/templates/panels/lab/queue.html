@@ -1,0 +1,44 @@
+<div class="page-header" style="margin-bottom: 20px;">
+  <h2>Laboratory Queue (LIS)</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Pending patient samples and multi-parameter test requests</p>
+</div>
+
+<div class="glass-card" style="padding: 16px;"
+     hx-get="/dashboard/panel?role=lab&panel=queue"
+     hx-trigger="refresh-lab-list from:body"
+     hx-target="#main-panel-content">
+  <table class="data-table" style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Order ID</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Patient Name</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Test Requested</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Ordered At</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for inv in investigations %}
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 10px 12px; font-weight: 600; color: var(--text-1); font-family: monospace;">{{ inv.id }}</td>
+          <td style="padding: 10px 12px; font-weight: 700; color: var(--primary);">{{ inv.patient_name }}</td>
+          <td style="padding: 10px 12px; color: var(--text-2); font-weight: 500;">{{ inv.test_name }}</td>
+          <td style="padding: 10px 12px; color: var(--text-3); font-size: 0.78rem;">{{ inv.timestamp }}</td>
+          <td style="padding: 10px 12px;">
+            <button class="glass-btn glass-btn-primary" 
+                    style="padding: 4px 10px; font-size: 0.75rem;"
+                    hx-get="/api/v1/lab/results-modal/{{ inv.id }}"
+                    hx-target="#glass-modal-container"
+                    @click="modalOpen = true">
+              Enter Results
+            </button>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="5" style="padding: 20px; text-align: center; color: var(--text-3);">No pending laboratory tests.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

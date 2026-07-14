@@ -1,0 +1,28 @@
+<div class="sidebar-role-header">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="3" y="3" width="7" height="9" rx="1"/>
+    <rect x="14" y="3" width="7" height="5" rx="1"/>
+    <rect x="14" y="12" width="7" height="9" rx="1"/>
+    <rect x="3" y="16" width="7" height="5" rx="1"/>
+  </svg>
+  <span>{{ role | replace('_', ' ') | title }}</span>
+</div>
+
+<ul class="sidebar-menu-list" x-data="{ activePanel: '{{ active_panel or items[0][1] }}' }">
+  {% for label, panel in items %}
+    <li>
+      <a href="#" 
+         hx-get="/dashboard/panel?role={{ role }}&panel={{ panel }}" 
+         hx-target="#main-panel-content"
+         class="sidebar-menu-link"
+         :class="{ 'active': activePanel === '{{ panel }}' }"
+         @click="activePanel = '{{ panel }}'">
+         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+           <circle cx="12" cy="12" r="3"/>
+           <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+         </svg>
+         <span>{{ label }}</span>
+      </a>
+    </li>
+  {% endfor %}
+</ul>

@@ -1,0 +1,37 @@
+<div class="page-header" style="margin-bottom: 20px;">
+  <h2>WHO Surgical Safety Checklist</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Intra-operative safety checklist checks: Sign In (before anesthesia), Time Out (before skin incision), Sign Out (before patient leaves OT)</p>
+</div>
+
+<div class="glass-card" style="padding: 20px; max-width: 600px;">
+  <h3 class="form-title" style="margin-top: 0; margin-bottom: 15px;">WHO Safety Checklist Log</h3>
+  
+  <form hx-post="/api/v1/ot/checklist" hx-target="#checklist-message" hx-swap="innerHTML">
+    <div class="form-group" style="margin-bottom: 15px;">
+      <label>OT Room & Schedule ID *</label>
+      <input type="text" name="schedule_id" required placeholder="OT-Room 1 - SCH-104" style="width: 100%; box-sizing: border-box;">
+    </div>
+    
+    <div style="border-top: 1px solid var(--border); padding-top: 8px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.6;">
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 6px;">
+        <input type="checkbox" name="identity" checked value="true"> <strong>Sign In:</strong> Patient has confirmed identity, site, procedure, and consent
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 6px;">
+        <input type="checkbox" name="site_marked" checked value="true"> <strong>Sign In:</strong> Surgical site marked or not applicable
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 6px;">
+        <input type="checkbox" name="timeout" checked value="true"> <strong>Time Out:</strong> All team members introduced themselves by name and role
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 6px;">
+        <input type="checkbox" name="antibiotic" checked value="true"> <strong>Time Out:</strong> Antibiotic prophylaxis given within last 60 minutes
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <input type="checkbox" name="signout" checked value="true"> <strong>Sign Out:</strong> Nurse verbally confirms instrument and sponge counts are correct
+      </label>
+    </div>
+    
+    <button type="submit" class="btn-login" style="width: 100%;">Record Safety Checklist</button>
+  </form>
+  
+  <div id="checklist-message"></div>
+</div>

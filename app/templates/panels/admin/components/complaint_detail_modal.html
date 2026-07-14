@@ -1,0 +1,83 @@
+<div class="glass-overlay-backdrop" @click="modalOpen = false"></div>
+<div class="glass-overlay-content" style="max-width: 540px;">
+  <div class="glass-overlay-header">
+    <div style="display: flex; flex-direction: column;">
+      <h2>Ticket Details: {{ complaint.id }}</h2>
+      <span style="font-size: 0.72rem; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+        Category: {{ complaint.category }}
+      </span>
+    </div>
+    <button class="glass-overlay-close" @click="modalOpen = false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  
+  <div class="glass-overlay-body">
+    
+    <!-- Info row -->
+    <div style="display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 0.78rem; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+      <div>
+        <span style="color: var(--text-3); display: block;">Reported By:</span>
+        <strong style="color: var(--text-1);">{{ complaint.reported_by }} ({{ complaint.department }})</strong>
+      </div>
+      <div style="text-align: right;">
+        <span style="color: var(--text-3); display: block;">Date Raised:</span>
+        <strong style="color: var(--text-1);">{{ complaint.created_at.strftime('%Y-%m-%d %H:%M') if complaint.created_at else 'N/A' }}</strong>
+      </div>
+    </div>
+    
+    <!-- Notes / Description -->
+    <div class="overview-section">
+      <div class="overview-section-title">Complaint Notes</div>
+      <div class="glass-card" style="background: rgba(163,177,198,0.15); box-shadow: var(--neumorph-inset); padding: 14px; border-radius: var(--radius-sm); font-size: 0.85rem; line-height: 1.5; color: var(--text-1);">
+        {{ complaint.description }}
+      </div>
+    </div>
+    
+    <!-- Actions and Assignment Form -->
+    <div class="overview-section" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <div class="overview-section-title">Ticket Operations</div>
+      
+      <div class="grid-2" style="align-items: end;">
+        <!-- Assign Form -->
+        <form hx-post="/api/v1/admin/assign-complaint/{{ complaint.id }}" hx-target="#ticket-action-message" hx-swap="innerHTML" style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: .68rem; font-weight: 700; text-transform: uppercase; color: var(--text-3);">Assign Duty To Staff</label>
+          <div style="display: flex; gap: 8px;">
+            <select name="assigned_to" required style="padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.8rem; background: var(--bg); color: var(--text-1); flex: 1;">
+              <option value="">Select Staff</option>
+              {% for staff in staff_list %}
+                <option value="{{ staff.name }} ({{ staff.id }})" {% if complaint.assigned_to == staff.name or (staff.id in complaint.assigned_to|string) %}selected{% endif %}>
+                  {{ staff.name }} ({{ staff.role | upper }})
+                </option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="glass-btn glass-btn-primary" style="padding: 6px 12px; font-size: 0.75rem;">Assign</button>
+          </div>
+        </form>
+        
+        <!-- Status Action -->
+        <div style="display: flex; flex-direction: column; gap: 6px; justify-content: flex-end; height: 100%;">
+          {% if complaint.status != 'Closed' and complaint.status != 'Resolved' %}
+            <button hx-post="/api/v1/admin/close-complaint/{{ complaint.id }}" 
+                    hx-target="#ticket-action-message" 
+                    hx-swap="innerHTML" 
+                    class="glass-btn glass-btn-danger" 
+                    style="padding: 8px 16px; font-size: 0.8rem; font-weight: 700; width: 100%; text-align: center; justify-content: center;">
+              Resolve & Close Ticket
+            </button>
+          {% else %}
+            <div style="text-align: center; padding: 8px; border-radius: var(--radius-sm); background: var(--success-bg); color: var(--success); font-weight: 700; font-size: 0.8rem; border: 1px solid rgba(5,150,105,0.2);">
+              ✓ Ticket Closed
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div id="ticket-action-message" style="margin-top: 12px;"></div>
+    </div>
+    
+  </div>
+</div>

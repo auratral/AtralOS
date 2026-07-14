@@ -1,0 +1,67 @@
+graph TD
+    %% Entry Points
+    Amb[Ambulance Dispatch / Transport] -->|Dispatch Vehicle & Trip Log| ER_Reg[ER Quick Registration]
+    WalkIn[Walk-in / Reception] -->|Book Appointment: Status 'Booked'| Ward_N[Ward Nursing Station]
+    
+    %% Emergency Department Workflow
+    subgraph "Emergency Department (ED)"
+        ER_Reg -->|Onboard Case| Triage{Triage Board}
+        Triage -->|P1: Critical/Resus| Resus[Resuscitation Bay]
+        Triage -->|P2/P3: Stable/Mild| ER_Beds[ER Beds / Observation]
+        Triage -->|MLC Tag| MLC[Medico-Legal Case Log]
+    end
+    
+    %% Ward & Outpatient Workflow
+    subgraph "Outpatient & General Wards"
+        Ward_N -->|Record Vitals: Status 'Checked In'| Doc_Clin[Doctor Clinical Consult]
+        Doc_Clin -->|General Ward Admission| General_Ward[General Ward Beds]
+        General_Ward -->|Nursing Care Plans| Ward_N
+        Doc_Clin -->|Write SOAP / Order Surgery| PAC[Pre-Anesthesia Checkup]
+    end
+
+    %% Intensive Care Unit Workflow
+    subgraph "Intensive Care Unit (ICU)"
+        Resus -->|Critical Transfer| ICU_Beds[ICU Bed Map: 12 Beds]
+        ICU_Beds -->|Checklist| FAST_HUG[FAST HUG / SOFA Scoring]
+    end
+
+    %% Operation Theatre Workflow
+    subgraph "Operation Theatre (OT)"
+        PAC -->|Surgery Scheduled| OT_Room[OT Room Booking]
+        OT_Room -->|WHO Checklist| WHO[Sign In / Time Out / Sign Out]
+        WHO -->|Procedure Log| Intra[Intra-Operative & Anesthesia Log]
+        Intra -->|Recovery Score| Aldrete[Post-Op Aldrete Recovery]
+    end
+
+    %% Ventilator and Controlled Substance Flows
+    subgraph "Critical Support & Controlled Substances"
+        ICU_Beds -->|Critical Ventilator Support| Vent[Ventilator & Infusion Charting]
+        General_Ward -->|General Ward Ventilator Support| Vent
+        Vent -->|Request Sedatives / Anesthetics| Narcotics[Narcotics Department: Controlled Registry]
+    end
+
+    %% Patient Transfers between ICU, OT, Wards
+    Aldrete -->|Post-Op Critical| ICU_Beds
+    Aldrete -->|Post-Op Stable| General_Ward
+    General_Ward -->|Deterioration Early Warning| ICU_Beds
+    Resus -->|Emergency Ward Admit| General_Ward
+    ICU_Beds -->|Emergency Surgery Request| OT_Room
+
+    %% Supporting Diagnostic & Supply Services
+    subgraph "Support Services"
+        Doc_Clin & ICU_Beds & Intra & General_Ward -->|Order Lab Test| Lab[Laboratory / Pathology]
+        Doc_Clin & ICU_Beds & Intra & General_Ward -->|Order Scan| Rad[Radiology / Imaging]
+        Doc_Clin & ICU_Beds & Intra & General_Ward -->|Request Blood Pack| BB[Blood Bank: Stock & Cross-Match]
+        Doc_Clin & ICU_Beds & Intra & General_Ward -->|Diet Order| Diet[Dietary Kitchen & NRS-2002]
+        Doc_Clin & ICU_Beds & Intra & General_Ward -->|Prescribe Medicine| Pharm[Pharmacy Inventory & Dispensing]
+        Narcotics -->|Authorize & Dispense controlled drugs| Pharm
+    end
+
+    %% Central Finance & Billing
+    subgraph "Administrative Core"
+        Lab & Rad & BB & Pharm & Narcotics -->|Accrue Charges| Fin[Finance & Billing: Ledger & Claims]
+        Fin -->|Settlement: Status 'Paid'| Discharge[Discharged / Completed]
+    end
+
+    %% Patient Access
+    Discharge & Lab & Rad & Pharm -->|Secure Sync| PP[Patient Portal PWA]

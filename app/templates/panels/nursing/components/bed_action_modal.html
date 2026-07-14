@@ -1,0 +1,118 @@
+{% if bed.status == 'Available' %}
+<div class="glass-overlay-backdrop" @click="modalOpen = false"></div>
+<div class="glass-overlay-content" style="max-width: 460px;">
+  <div class="glass-overlay-header">
+    <div style="display: flex; flex-direction: column;">
+      <h2>Assign Bed: {{ bed.bed_number }}</h2>
+      <span style="font-size: 0.72rem; color: var(--primary); font-weight: 700; text-transform: uppercase;">
+        {{ bed.ward_name }} — Bed Allocation
+      </span>
+    </div>
+    <button class="glass-overlay-close" @click="modalOpen = false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  
+  <div class="glass-overlay-body">
+    <form hx-post="/api/v1/nursing/bed/assign/{{ bed.id }}" hx-target="#bed-action-message" hx-swap="innerHTML">
+      <div class="form-group">
+        <label>Select Admitting Patient *</label>
+        <select name="patient_id" required style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 6px;">
+          <option value="">Select Patient</option>
+          {% for pat in patients %}
+            <option value="{{ pat.id }}">{{ pat.name }} ({{ pat.id }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 14px;">
+        <button type="button" class="glass-btn glass-btn-secondary" @click="modalOpen = false">Cancel</button>
+        <button type="submit" class="glass-btn glass-btn-primary">Assign Bed</button>
+      </div>
+    </form>
+    <div id="bed-action-message" style="margin-top: 12px;"></div>
+  </div>
+</div>
+
+{% elif bed.status == 'Occupied' %}
+<div class="glass-overlay-backdrop" @click="modalOpen = false"></div>
+<div class="glass-overlay-content" style="max-width: 460px;">
+  <div class="glass-overlay-header">
+    <div style="display: flex; flex-direction: column;">
+      <h2>Manage Bed: {{ bed.bed_number }}</h2>
+      <span style="font-size: 0.72rem; color: var(--danger); font-weight: 700; text-transform: uppercase;">
+        Currently Occupied
+      </span>
+    </div>
+    <button class="glass-overlay-close" @click="modalOpen = false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  
+  <div class="glass-overlay-body">
+    <div style="background: rgba(37,99,235,0.05); border: 1px solid rgba(37,99,235,0.15); padding: 16px; border-radius: var(--radius-md); margin-bottom: 20px;">
+      <span style="font-size: 0.75rem; color: var(--text-3); display: block;">Patient Admitted:</span>
+      <strong style="font-size: 1.1rem; color: var(--text-1); display: block; margin-top: 2px;">{{ patient_name }}</strong>
+      <span style="font-size: 0.8rem; color: var(--text-2); font-family: monospace; display: block; margin-top: 4px;">UHID: {{ bed.patient_id }}</span>
+    </div>
+    
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button hx-post="/api/v1/nursing/bed/vacate/{{ bed.id }}" 
+              hx-target="#bed-action-message" 
+              hx-swap="innerHTML" 
+              class="glass-btn glass-btn-primary" 
+              style="width: 100%; justify-content: center; padding: 10px; font-weight: 600;">
+        Discharge Patient & Free Bed
+      </button>
+      <button hx-post="/api/v1/nursing/bed/mark-cleaning/{{ bed.id }}" 
+              hx-target="#bed-action-message" 
+              hx-swap="innerHTML" 
+              class="glass-btn glass-btn-secondary" 
+              style="width: 100%; justify-content: center; padding: 10px; font-weight: 600; color: var(--warning); border-color: var(--warning);">
+        Transfer Patient & Send Bed to Cleaning
+      </button>
+    </div>
+    <div id="bed-action-message" style="margin-top: 12px;"></div>
+  </div>
+</div>
+
+{% else %}
+<div class="glass-overlay-backdrop" @click="modalOpen = false"></div>
+<div class="glass-overlay-content" style="max-width: 460px;">
+  <div class="glass-overlay-header">
+    <div style="display: flex; flex-direction: column;">
+      <h2>Sanitize Bed: {{ bed.bed_number }}</h2>
+      <span style="font-size: 0.72rem; color: var(--warning); font-weight: 700; text-transform: uppercase;">
+        Undergoing Maintenance / Cleaning
+      </span>
+    </div>
+    <button class="glass-overlay-close" @click="modalOpen = false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  
+  <div class="glass-overlay-body">
+    <p style="font-size: 0.9rem; color: var(--text-2); margin-bottom: 20px; text-align: center;">
+      This bed is currently marked for cleaning and sanitization. Confirm once it is ready for patient intake.
+    </p>
+    
+    <button hx-post="/api/v1/nursing/bed/make-available/{{ bed.id }}" 
+            hx-target="#bed-action-message" 
+            hx-swap="innerHTML" 
+            class="glass-btn glass-btn-primary" 
+            style="width: 100%; justify-content: center; padding: 12px; font-weight: 600; font-size: 0.95rem;">
+      Confirm Cleaning Complete (Mark Available)
+    </button>
+    <div id="bed-action-message" style="margin-top: 12px;"></div>
+  </div>
+</div>
+{% endif %}

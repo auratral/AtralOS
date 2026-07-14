@@ -1,0 +1,459 @@
+<div class="page-header" style="margin-bottom: 20px;">
+  <div style="display: flex; flex-direction: column;">
+    <h2 style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--text-1); margin: 0;">Clinical Consultation Workstation</h2>
+    <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">SOAP charting, electronic prescribing, and diagnostic ordering</p>
+  </div>
+</div>
+
+<!-- Patient Summary Banner -->
+<div class="glass-card" style="margin-bottom: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; border-left: 5px solid var(--primary);">
+  <div>
+    <span style="font-size: 0.72rem; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Active Consultation</span>
+    <h3 style="margin: 2px 0; color: var(--text-1); font-size: 1.25rem; font-weight: 700;">{{ patient.name }}</h3>
+    <span style="font-size: 0.8rem; color: var(--text-3); font-family: monospace;">UHID: {{ patient.id }} | DOB: {{ patient.dob }} | Gender: {{ patient.gender }} | Blood Group: {{ patient.blood_group or 'N/A' }}</span>
+  </div>
+  
+  <!-- Nurse Vitals Summary -->
+  <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+    {% if vitals %}
+      <div style="background: rgba(109,40,217,0.05); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(109,40,217,0.1); font-size: 0.8rem;">
+        <span style="color: var(--text-3); font-size: 0.65rem; display: block;">BLOOD PRESSURE</span>
+        <strong style="color: var(--primary);">{{ vitals.bp }} mmHg</strong>
+      </div>
+      <div style="background: rgba(109,40,217,0.05); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(109,40,217,0.1); font-size: 0.8rem;">
+        <span style="color: var(--text-3); font-size: 0.65rem; display: block;">TEMPERATURE</span>
+        <strong style="color: var(--primary);">{{ vitals.temp }} °F</strong>
+      </div>
+      <div style="background: rgba(109,40,217,0.05); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(109,40,217,0.1); font-size: 0.8rem;">
+        <span style="color: var(--text-3); font-size: 0.65rem; display: block;">HEART RATE</span>
+        <strong style="color: var(--primary);">{{ vitals.pulse }} bpm</strong>
+      </div>
+      <div style="background: rgba(109,40,217,0.05); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(109,40,217,0.1); font-size: 0.8rem;">
+        <span style="color: var(--text-3); font-size: 0.65rem; display: block;">SpO2</span>
+        <strong style="color: var(--primary);">{{ vitals.spo2 }} %</strong>
+      </div>
+    {% else %}
+      <div style="background: var(--warning-bg); border: 1px solid rgba(217,119,6,0.2); padding: 10px; border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--warning); font-weight: 600;">
+        ⚠️ No vitals recorded by nursing station for this appointment
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Main Consultation Container with Alpine tabs -->
+<div x-data="{ activeTab: 'consult' }" class="glass-card" style="padding: 20px;">
+  
+  <!-- Tab Selectors -->
+  <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; overflow-x: auto;">
+    <button class="glass-btn" :class="{ 'glass-btn-primary active': activeTab === 'consult' }" @click="activeTab = 'consult'" style="font-size: 0.85rem; padding: 6px 16px;">
+      SOAP Charting & Referrals
+    </button>
+    <button class="glass-btn" :class="{ 'glass-btn-primary active': activeTab === 'lab' }" @click="activeTab = 'lab'" style="font-size: 0.85rem; padding: 6px 16px;">
+      Lab Orders & History
+    </button>
+    <button class="glass-btn" :class="{ 'glass-btn-primary active': activeTab === 'radiology' }" @click="activeTab = 'radiology'" style="font-size: 0.85rem; padding: 6px 16px;">
+      Radiology Scans
+    </button>
+    <button class="glass-btn" :class="{ 'glass-btn-primary active': activeTab === 'history' }" @click="activeTab = 'history'" style="font-size: 0.85rem; padding: 6px 16px;">
+      Clinical EMR History
+    </button>
+  </div>
+  
+  <!-- TAB 1: CONSULTATION & SOAP FORM -->
+  <div x-show="activeTab === 'consult'">
+    <form hx-post="/api/v1/doctor/save-consultation" hx-target="#consult-save-message" hx-swap="innerHTML">
+      <input type="hidden" name="appt_id" value="{{ appt.id }}">
+      <input type="hidden" name="patient_id" value="{{ patient.id }}">
+      
+      <!-- SOAP Fields Grid -->
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Subjective (S) — Symptoms & Complaints *</label>
+          <textarea name="s" required placeholder="Patient reports throbbing headache, dizziness for 3 days..." style="width: 100%; box-sizing: border-box; min-height: 100px;">{{ vitals.notes or '' }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Objective (O) — Physical Examination Findings *</label>
+          <textarea name="o" required placeholder="Chest clear, ENT exam normal, reflexes intact..." style="width: 100%; box-sizing: border-box; min-height: 100px;"></textarea>
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 14px;">
+        <div class="form-group">
+          <label>Assessment (A) — Diagnoses *</label>
+          <textarea name="a" required placeholder="Acute Migraine / Mild Dehydration..." style="width: 100%; box-sizing: border-box; min-height: 100px;"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Plan (P) — Treatment, Prescription & Advice *</label>
+          <textarea name="p" required placeholder="Rest, increased fluid intake, medications as prescribed..." style="width: 100%; box-sizing: border-box; min-height: 100px;"></textarea>
+        </div>
+      </div>
+
+      <!-- Electronic Prescription Details -->
+      <div style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 16px;" 
+           x-data="{ 
+             prescribedMeds: [],
+             selectedMed: '',
+             selectedDur: '5 Days',
+             selectedNote: '',
+             doseM: false,
+             doseA: false,
+             doseE: false,
+             doseN: false,
+             foodTiming: 'Post Meals',
+             addMed() {
+               if (this.selectedMed) {
+                 let m = this.doseM ? '1' : '0';
+                 let a = this.doseA ? '1' : '0';
+                 let e = this.doseE ? '1' : '0';
+                 let n = this.doseN ? '1' : '0';
+                 let freqStr = `${m}-${a}-${e}-${n}`;
+                 if (freqStr === '0-0-0-0') {
+                   freqStr = 'PRN (As needed)';
+                 } else {
+                   freqStr = `${freqStr} (${this.foodTiming})`;
+                 }
+                 
+                 this.prescribedMeds.push({
+                   name: this.selectedMed,
+                   frequency: freqStr,
+                   duration: this.selectedDur,
+                   note: this.selectedNote
+                 });
+                 this.selectedMed = '';
+                 this.selectedNote = '';
+                 this.doseM = false;
+                 this.doseA = false;
+                 this.doseE = false;
+                 this.doseN = false;
+                 this.foodTiming = 'Post Meals';
+               }
+             },
+             removeMed(index) {
+               this.prescribedMeds.splice(index, 1);
+             }
+           }">
+        <h4 style="margin: 0 0 10px 0; color: var(--primary); font-size: 0.95rem;">Structured Electronic Prescription (eRx)</h4>
+        
+        <!-- Add Medicine Controls Container -->
+        <div style="background: rgba(163,177,198,0.05); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px;">
+          
+          <!-- Row 1: Drug, Toggles, Duration -->
+          <div class="grid-3" style="align-items: center; gap: 14px;">
+            <!-- Column 1: Drug Selection -->
+            <div class="form-group">
+              <label style="font-size: 0.72rem; color: var(--text-2); font-weight: 600;">Select Medicine</label>
+              <select x-model="selectedMed" style="width: 100%; box-sizing: border-box; padding: 7px; font-size: 0.8rem; margin-top: 4px;">
+                <option value="">-- Select Drug --</option>
+                <option>Paracetamol 650mg</option>
+                <option>Amoxicillin 500mg</option>
+                <option>Pantoprazole 40mg</option>
+                <option>Metformin 500mg</option>
+                <option>Atorvastatin 10mg</option>
+                <option>Ibuprofen 400mg</option>
+                <option>Cetirizine 10mg</option>
+                <option>Azithromycin 500mg</option>
+                <option>Amlodipine 5mg</option>
+                <option>Multivitamin Supplement</option>
+              </select>
+            </div>
+            
+            <!-- Column 2: Pill Dosing Grid (M-A-E-N Toggles) -->
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+              <label style="font-size: 0.72rem; color: var(--text-2); font-weight: 600; display: block;">Dosage Schedule & Food Instructions</label>
+              <div style="display: flex; align-items: center; gap: 12px; margin-top: 2px;">
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" class="glass-btn" :class="{ 'glass-btn-primary active': doseM }" @click="doseM = !doseM" 
+                          title="Morning" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; padding: 0; font-size: 0.8rem; border-color: var(--border);">M</button>
+                  <button type="button" class="glass-btn" :class="{ 'glass-btn-primary active': doseA }" @click="doseA = !doseA" 
+                          title="Afternoon" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; padding: 0; font-size: 0.8rem; border-color: var(--border);">A</button>
+                  <button type="button" class="glass-btn" :class="{ 'glass-btn-primary active': doseE }" @click="doseE = !doseE" 
+                          title="Evening" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; padding: 0; font-size: 0.8rem; border-color: var(--border);">E</button>
+                  <button type="button" class="glass-btn" :class="{ 'glass-btn-primary active': doseN }" @click="doseN = !doseN" 
+                          title="Night" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; padding: 0; font-size: 0.8rem; border-color: var(--border);">N</button>
+                </div>
+                <div style="display: flex; border: 1px solid var(--border); border-radius: 20px; overflow: hidden; background: var(--bg);">
+                  <button type="button" @click="foodTiming = 'Post Meals'" 
+                          :style="foodTiming === 'Post Meals' ? 'background: var(--primary); color: white; border: none; padding: 4px 10px; font-size: 0.68rem; font-weight: 600;' : 'background: transparent; color: var(--text-2); border: none; padding: 4px 10px; font-size: 0.68rem; cursor: pointer;'">
+                    Post
+                  </button>
+                  <button type="button" @click="foodTiming = 'Pre Meals'" 
+                          :style="foodTiming === 'Pre Meals' ? 'background: var(--primary); color: white; border: none; padding: 4px 10px; font-size: 0.68rem; font-weight: 600;' : 'background: transparent; color: var(--text-2); border: none; padding: 4px 10px; font-size: 0.68rem; cursor: pointer;'">
+                    Pre
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Column 3: Duration -->
+            <div class="form-group">
+              <label style="font-size: 0.72rem; color: var(--text-2); font-weight: 600;">Duration</label>
+              <select x-model="selectedDur" style="width: 100%; box-sizing: border-box; padding: 7px; font-size: 0.8rem; margin-top: 4px;">
+                <option>3 Days</option>
+                <option>5 Days</option>
+                <option>7 Days</option>
+                <option>10 Days</option>
+                <option>14 Days</option>
+                <option>30 Days</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Row 2: Special Instructions & Add Button -->
+          <div style="display: flex; gap: 12px; align-items: flex-end; border-top: 1px solid var(--border); padding-top: 10px;">
+            <div style="flex: 1; display: flex; flex-direction: column;">
+              <label style="font-size: 0.72rem; color: var(--text-2); font-weight: 600;">Special Instructions / Drug Notes</label>
+              <input type="text" x-model="selectedNote" placeholder="e.g. Take with warm water / Avoid dairy / Take before bedtime..." style="width: 100%; box-sizing: border-box; padding: 7px; font-size: 0.8rem; margin-top: 4px;">
+            </div>
+            <button type="button" class="glass-btn glass-btn-primary" @click="addMed()" style="padding: 7px 24px; font-size: 0.8rem; font-weight: 700; height: 33px;">Add Drug</button>
+          </div>
+          
+        </div>
+        
+        <!-- Active Prescription List -->
+        <div style="margin-top: 12px; margin-bottom: 12px;">
+          <label style="font-size: 0.72rem; color: var(--text-3); font-weight: 600; display: block; margin-bottom: 6px;">Active Medication List</label>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <template x-for="(med, idx) in prescribedMeds" :key="idx">
+              <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-white); border: 1px solid var(--border); padding: 8px 12px; border-radius: var(--radius-sm);">
+                <div style="font-size: 0.85rem;">
+                  <strong style="color: var(--text-1);" x-text="med.name"></strong> 
+                  <span style="color: var(--text-3); font-size: 0.75rem; margin-left: 6px;">(Dose: <span x-text="med.frequency"></span>, Dur: <span x-text="med.duration"></span>)</span>
+                  <template x-if="med.note && med.note.trim() !== ''">
+                    <div style="font-size: 0.72rem; color: var(--primary); font-weight: 500; margin-top: 2px;">
+                      📝 Note: <span x-text="med.note"></span>
+                    </div>
+                  </template>
+                </div>
+                <button type="button" @click="removeMed(idx)" class="glass-btn" style="padding: 2px 6px; font-size: 0.7rem; color: var(--danger); border-color: var(--danger);">Remove</button>
+              </div>
+            </template>
+            <template x-if="prescribedMeds.length === 0">
+              <div style="padding: 10px; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius-sm); color: var(--text-3); font-size: 0.8rem;">
+                No medications added yet to this prescription.
+              </div>
+            </template>
+          </div>
+        </div>
+        
+        <!-- Hidden input to submit JSON payload -->
+        <input type="hidden" name="medicines_json" :value="JSON.stringify(prescribedMeds)">
+      </div>
+      
+      <!-- Diagnostic & Specialist Referrals -->
+      <div class="grid-3" style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 16px; gap: 16px;">
+        <!-- Lab Referrals Checklist -->
+        <div class="glass-card" style="box-shadow: var(--neumorph-inset); background: rgba(163,177,198,0.05); padding: 12px;">
+          <h5 style="margin: 0 0 8px 0; font-size: 0.85rem; color: var(--text-1);">Refer Lab Tests</h5>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; color: var(--text-2);">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" name="lab_tests" value="Complete Blood Count (CBC)"> CBC (Blood Count)
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" name="lab_tests" value="Lipid Profile"> Lipid Profile
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" name="lab_tests" value="Renal Function Test (RFT)"> Renal Function (RFT)
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" name="lab_tests" value="HbA1c Glycated Hemoglobin"> HbA1c (Diabetes)
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" name="lab_tests" value="Liver Function Test (LFT)"> Liver Function (LFT)
+            </label>
+          </div>
+        </div>
+        
+        <!-- Radiology Referrals Checklist -->
+        <div class="glass-card" style="box-shadow: var(--neumorph-inset); background: rgba(163,177,198,0.05); padding: 12px;">
+          <h5 style="margin: 0 0 8px 0; font-size: 0.85rem; color: var(--text-1);">Refer Radiology Scans</h5>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; color: var(--text-2);">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" name="radio_scans" value="Chest X-Ray PA View"> Chest X-Ray
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" name="radio_scans" value="Brain MRI"> Brain MRI Scan
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" name="radio_scans" value="Abdomen USG"> USG Abdomen
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" name="radio_scans" value="CT Chest Scan"> CT Chest Scan
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" name="radio_scans" value="Echocardiography"> Echocardiography
+            </label>
+          </div>
+        </div>
+        
+        <!-- Specialist Department Referrals -->
+        <div class="glass-card" style="box-shadow: var(--neumorph-inset); background: rgba(163,177,198,0.05); padding: 12px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <h5 style="margin: 0 0 8px 0; font-size: 0.85rem; color: var(--text-1);">Specialist Referral</h5>
+            <div class="form-group">
+              <label style="font-size: 0.72rem; color: var(--text-3);">Refer to Department</label>
+              <select name="referral_dept" style="width: 100%; box-sizing: border-box; padding: 6px; font-size: 0.8rem;">
+                <option value="">None</option>
+                {% for dept in departments %}
+                  <option value="{{ dept.name }} ({{ dept.code }})">{{ dept.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group" style="margin-top: 8px;">
+              <label style="font-size: 0.72rem; color: var(--text-3);">Refer to Specialist Doctor</label>
+              <select name="referral_doc" style="width: 100%; box-sizing: border-box; padding: 6px; font-size: 0.8rem;">
+                <option value="">None</option>
+                {% for doc in doctors %}
+                  <option value="{{ doc.name }} ({{ doc.id }})">{{ doc.name }} ({{ doc.specialization or 'Consultant' }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Submit / Cancel -->
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+        <button type="button" class="glass-btn glass-btn-secondary" style="padding: 10px 24px;"
+                hx-get="/dashboard/panel?role=doctor&panel=queue" hx-target="#main-panel-content">
+          Cancel & Back
+        </button>
+        <button type="submit" class="glass-btn glass-btn-primary" style="padding: 10px 32px; font-weight: 700;">
+          Save & Complete Consultation
+        </button>
+      </div>
+    </form>
+    
+    <div id="consult-save-message" style="margin-top: 12px;"></div>
+  </div>
+  
+  <!-- TAB 2: LAB RESULTS & ORDERS -->
+  <div x-show="activeTab === 'lab'">
+    <h4 style="margin: 0 0 12px 0; color: var(--text-1); font-size: 1rem;">Laboratory Investigation Logs</h4>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date Ordered</th>
+            <th>Test Name</th>
+            <th>Status</th>
+            <th>Test Result Data</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in investigations if inv.type == 'Lab' or inv.type == 'lab' %}
+            <tr>
+              <td style="font-size: 0.75rem; color: var(--text-2);">{{ inv.timestamp.strftime('%Y-%m-%d %H:%M') if inv.timestamp else 'N/A' }}</td>
+              <td class="text-bold">{{ inv.test_name }}</td>
+              <td>
+                <span class="status-indicator {% if inv.status == 'Completed' %}status-active{% else %}status-arrived{% endif %}">
+                  {{ inv.status }}
+                </span>
+              </td>
+              <td style="font-size: 0.8rem; color: var(--text-1); line-height: 1.4;">
+                {% if inv.status == 'Completed' %}
+                  <strong>Findings:</strong> {{ inv.results.get('findings', inv.results.get('notes', 'Inconclusive')) }}<br>
+                  {% if inv.results.get('report_url') %}
+                    <a href="{{ inv.results.get('report_url') }}" target="_blank" style="color: var(--primary); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;">
+                      📄 View Certified Lab Report (PDF)
+                    </a>
+                  {% endif %}
+                {% else %}
+                  <span style="color: var(--text-3);">Awaiting lab processing...</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; padding: 20px; color: var(--text-3);">No lab investigations found for this patient.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- TAB 3: RADIOLOGY SCANS -->
+  <div x-show="activeTab === 'radiology'">
+    <h4 style="margin: 0 0 12px 0; color: var(--text-1); font-size: 1rem;">Radiology & Imaging Logs</h4>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date Ordered</th>
+            <th>Scan Name</th>
+            <th>Status</th>
+            <th>Findings / Diagnostic Report</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in investigations if inv.type == 'Radiology' or inv.type == 'radiology' %}
+            <tr>
+              <td style="font-size: 0.75rem; color: var(--text-2);">{{ inv.timestamp.strftime('%Y-%m-%d %H:%M') if inv.timestamp else 'N/A' }}</td>
+              <td class="text-bold">{{ inv.test_name }}</td>
+              <td>
+                <span class="status-indicator {% if inv.status == 'Completed' %}status-active{% else %}status-arrived{% endif %}">
+                  {{ inv.status }}
+                </span>
+              </td>
+              <td style="font-size: 0.8rem; color: var(--text-1); line-height: 1.4;">
+                {% if inv.status == 'Completed' %}
+                  <strong>Findings:</strong> {{ inv.results.get('findings', 'Inconclusive') }}<br>
+                  {% if inv.results.get('image_url') %}
+                    <a href="{{ inv.results.get('image_url') }}" target="_blank" style="color: var(--primary); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;">
+                      📷 View PACS DICOM Scan Image
+                    </a>
+                  {% endif %}
+                {% else %}
+                  <span style="color: var(--text-3);">Awaiting scan completion...</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; padding: 20px; color: var(--text-3);">No radiology scans found for this patient.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- TAB 4: CLINICAL EMR HISTORY -->
+  <div x-show="activeTab === 'history'">
+    <h4 style="margin: 0 0 12px 0; color: var(--text-1); font-size: 1rem;">EMR Consultation Timeline</h4>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      {% for record in history %}
+        <div class="glass-card" style="box-shadow: var(--neumorph-inset); background: rgba(163,177,198,0.03); padding: 14px;">
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border); padding-bottom: 6px; margin-bottom: 10px;">
+            <strong style="color: var(--primary);">Consultation Record — {{ record.date.strftime('%Y-%m-%d') }}</strong>
+            <span style="font-size: 0.75rem; color: var(--text-3);">Attending: {{ record.doctor_name }}</span>
+          </div>
+          
+          <div class="grid-2" style="font-size: 0.82rem; gap: 12px;">
+            <div>
+              <strong style="color: var(--text-2);">Subjective (S):</strong>
+              <p style="color: var(--text-1); margin: 2px 0 0 0;">{{ record.s }}</p>
+            </div>
+            <div>
+              <strong style="color: var(--text-2);">Objective (O):</strong>
+              <p style="color: var(--text-1); margin: 2px 0 0 0;">{{ record.o }}</p>
+            </div>
+          </div>
+          <div class="grid-2" style="font-size: 0.82rem; gap: 12px; margin-top: 10px;">
+            <div>
+              <strong style="color: var(--text-2);">Assessment (A):</strong>
+              <p style="color: var(--text-1); margin: 2px 0 0 0;">{{ record.a | string }}</p>
+            </div>
+            <div>
+              <strong style="color: var(--text-2);">Plan (P):</strong>
+              <p style="color: var(--text-1); margin: 2px 0 0 0;">{{ record.p }}</p>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div style="text-align: center; padding: 20px; color: var(--text-3);">No previous SOAP consultation records found in timeline.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>

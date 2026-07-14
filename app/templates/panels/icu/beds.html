@@ -1,0 +1,31 @@
+<div class="page-header" style="margin-bottom: 24px;">
+  <h2>ICU Bed Map & Monitoring</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Interactive 12-bed ICU map showing active patient parameters</p>
+</div>
+
+<div class="icu-bed-grid">
+  {% for ad in admissions %}
+    <div class="bed-card" style="border-top: 4px solid {% if ad.acuity == 'Critical' %}var(--danger){% else %}var(--success){% endif %};">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+        <span style="font-weight: 700; color: var(--primary); font-size: 1.1rem;">{{ ad.bed_number }}</span>
+        <div>
+          {% if ad.ventilator %}
+            <span class="badge-vent">VENT</span>
+          {% endif %}
+          {% if ad.isolation %}
+            <span class="badge-isol">ISOL</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="text-bold" style="font-size: 0.95rem;">{{ ad.patient_name }}</div>
+      <div style="font-size: 0.8rem; color: var(--text-2); margin-top: 6px;">Diagnosis: {{ ad.diagnosis }}</div>
+      <div style="font-size: 0.8rem; color: var(--text-2); margin-top: 2px;">
+        Acuity: <span style="font-weight: 700; color: {% if ad.acuity == 'Critical' %}var(--danger){% else %}var(--success){% endif %};">{{ ad.acuity }}</span>
+      </div>
+    </div>
+  {% else %}
+    <div class="glass-card" style="grid-column: 1 / -1; padding: 30px; text-align: center; color: var(--text-3);">
+      No active ICU admissions.
+    </div>
+  {% endfor %}
+</div>

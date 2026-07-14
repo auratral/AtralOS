@@ -1,0 +1,20 @@
+<div class="page-header" style="margin-bottom: 24px;">
+  <div style="display: flex; flex-direction: column;">
+    <h2 style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--text-1); margin: 0;">Complaint & Ticket Management</h2>
+    <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Inspect tickets raised by staff, allocate resolution duty, and close resolved issues</p>
+  </div>
+</div>
+
+<div class="glass-card" style="display: flex; flex-direction: column; width: 100%;">
+  <h3 class="form-title" style="margin-top: 0; margin-bottom: 15px;">Active Helpdesk Tickets</h3>
+  
+  <div id="complaints-message" style="margin-bottom: 10px;"></div>
+  
+  <div id="complaints-table-container"
+       hx-get="/api/v1/admin/complaints-table"
+       hx-trigger="load, refresh-complaints-list from:body">
+    <div style="text-align: center; padding: 40px; color: var(--text-3);">
+      Loading complaints list...
+    </div>
+  </div>
+</div>

@@ -1,0 +1,43 @@
+<div class="page-header" style="margin-bottom: 24px;">
+  <h2>Emergency Triage Board</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Real-time trauma intake and color-coded acuity triage board</p>
+</div>
+
+<div class="glass-card">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Case ID</th>
+        <th>UHID</th>
+        <th>Patient Name</th>
+        <th>Triage Level</th>
+        <th>Chief Complaint</th>
+        <th>Arrival</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for case in cases %}
+        <tr>
+          <td class="text-bold">{{ case.id }}</td>
+          <td class="text-muted" style="font-family: monospace;">{{ case.patient_id }}</td>
+          <td class="text-bold">{{ case.patient_name }}</td>
+          <td>
+            {% if case.triage_level == 'Red' %}
+              <span class="triage-red">P1: CRITICAL</span>
+            {% elif case.triage_level == 'Orange' %}
+              <span class="triage-orange">P2: URGENT</span>
+            {% else %}
+              <span class="triage-green">P3: STABLE</span>
+            {% endif %}
+          </td>
+          <td style="color: var(--text-2);">{{ case.chief_complaint }}</td>
+          <td style="color: var(--text-2);">{{ case.time_of_arrival }}</td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="6" style="padding: 20px; text-align: center; color: var(--text-3);">No active emergency cases.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,40 @@
+<div class="page-header" style="margin-bottom: 20px;">
+  <h2>Nursing Station — Vitals Capture</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Checked-in patients waiting for vital signs and measurements</p>
+</div>
+
+<div class="glass-card" style="padding: 16px;">
+  <table class="data-table" style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Token</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">UHID</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Patient Name</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Check-in Time</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for appt in appointments %}
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 10px 12px; font-weight: 600; color: var(--primary);">#{{ appt.token }}</td>
+          <td style="padding: 10px 12px; color: var(--text-2); font-family: monospace;">{{ appt.patient_id }}</td>
+          <td style="padding: 10px 12px; font-weight: 500; color: var(--text-1);">{{ appt.patient_name }}</td>
+          <td style="padding: 10px 12px; color: var(--text-2);">{{ appt.time }}</td>
+          <td style="padding: 10px 12px;">
+            <button class="glass-btn glass-btn-primary"
+                    style="padding: 4px 10px; font-size: 0.75rem;"
+                    hx-get="/dashboard/panel?role=nursing&panel=take_vitals&appt_id={{ appt.id }}"
+                    hx-target="#main-panel-content">
+              Take Vitals
+            </button>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="5" style="padding: 20px; text-align: center; color: var(--text-3);">No patients awaiting vital checks.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

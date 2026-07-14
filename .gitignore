@@ -1,0 +1,23 @@
+node_modules/
+.env*
+.DS_Store
+dist/
+coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+
+# Databases
+*.db
+*.sqlite3
+
+# Local/IDE
+.vscode/
+.idea/

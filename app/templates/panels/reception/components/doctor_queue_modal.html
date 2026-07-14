@@ -1,0 +1,52 @@
+<div class="glass-overlay-backdrop" @click="modalOpen = false"></div>
+<div class="glass-overlay-content">
+  <div class="glass-overlay-header">
+    <div style="display: flex; flex-direction: column;">
+      <h2>{{ doctor.name }}'s Active Queue</h2>
+      <span style="font-size: 0.72rem; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">
+        OPD Workload Monitor
+      </span>
+    </div>
+    <button class="glass-overlay-close" @click="modalOpen = false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  
+  <div class="glass-overlay-body">
+    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Token</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Patient Name</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Appointment Time</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for appt in appointments %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 10px 12px; font-weight: 600; color: var(--primary);">#{{ appt.token }}</td>
+            <td style="padding: 10px 12px; font-weight: 700; color: var(--text-1);">{{ appt.patient_name }}</td>
+            <td style="padding: 10px 12px; color: var(--text-2);">{{ appt.time }}</td>
+            <td style="padding: 10px 12px;">
+              <span class="status-indicator {% if appt.status == 'Checked In' %}status-active{% else %}status-arrived{% endif %}">
+                {{ appt.status }}
+              </span>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="4" style="padding: 20px; text-align: center; color: var(--text-3);">No active patients in this doctor's queue.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+    <div style="display: flex; justify-content: flex-end; margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px;">
+      <button type="button" @click="modalOpen = false" class="glass-btn" style="padding: 7px 20px; font-size: 0.8rem;">Close</button>
+    </div>
+  </div>
+</div>

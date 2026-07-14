@@ -1,0 +1,65 @@
+<div class="table-wrapper" style="max-height: 480px; overflow-y: auto;">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Staff ID</th>
+        <th>Name</th>
+        <th>Role / Specialization</th>
+        <th>Department</th>
+        <th>Shift</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for staff in staff_list %}
+        <tr>
+          <td style="font-family: monospace; font-size: 0.72rem; font-weight: 600; color: var(--text-2);">{{ staff.id }}</td>
+          <td>
+            <div style="font-weight: 700; color: var(--text-1);">{{ staff.name }}</div>
+            <div style="font-size: 0.68rem; color: var(--text-3);">{{ staff.email }}</div>
+          </td>
+          <td>
+            <span class="role-badge" style="font-size: 0.65rem; padding: 2px 6px;">{{ staff.role | upper }}</span>
+            {% if staff.specialization %}
+              <div style="font-size: 0.65rem; color: var(--text-3); margin-top: 2px;">{{ staff.specialization }}</div>
+            {% endif %}
+          </td>
+          <td class="text-bold" style="color: var(--primary);">
+            {{ staff.department_id | default('Unassigned', true) }}
+          </td>
+          <td>
+            <span style="font-size: 0.72rem; color: var(--text-2); font-weight: 500;">{{ staff.shift }}</span>
+          </td>
+          <td>
+            <span class="status-indicator {% if staff.status == 'Active' %}status-active{% else %}status-canceled{% endif %}">
+              {{ staff.status }}
+            </span>
+          </td>
+          <td>
+            <div style="display: flex; gap: 6px;">
+              <button class="glass-btn" 
+                      style="padding: 4px 8px; font-size: 0.7rem; color: var(--primary); border-color: var(--primary);"
+                      hx-get="/api/v1/admin/edit-staff-modal/{{ staff.id }}"
+                      hx-target="#glass-modal-container"
+                      @click="modalOpen = true">
+                Edit
+              </button>
+              <button class="glass-btn glass-btn-danger" 
+                      style="padding: 4px 8px; font-size: 0.7rem;"
+                      hx-delete="/api/v1/admin/staff/{{ staff.id }}"
+                      hx-confirm="Are you sure you want to delete {{ staff.name }}?"
+                      hx-target="#registration-message">
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="7" style="padding: 20px; text-align: center; color: var(--text-3);">No staff accounts registered in directory.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

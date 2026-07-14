@@ -1,0 +1,39 @@
+<div class="page-header" style="margin-bottom: 20px;">
+  <h2>Drug Inventory Management</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Verify pharmacy stock levels, active batches, and reorder warnings</p>
+</div>
+
+<div class="glass-card" style="padding: 16px;">
+  <table class="data-table" style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Drug Code</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Drug Name</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Stock Qty</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Batch</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in drugs %}
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 10px 12px; font-weight: 600; color: var(--text-1);">{{ item.id }}</td>
+          <td style="padding: 10px 12px; font-weight: 500; color: var(--text-1);">{{ item.name }}</td>
+          <td style="padding: 10px 12px; font-weight: 600; color: {% if item.stock < 50 %}var(--danger){% else %}var(--text-1){% endif %};">
+            {{ item.stock }} units
+          </td>
+          <td style="padding: 10px 12px; color: var(--text-2);">{{ item.batch }}</td>
+          <td style="padding: 10px 12px;">
+            <span style="color: {% if item.stock < 50 %}var(--danger){% else %}var(--success){% endif %}; font-weight: 600;">
+              {% if item.stock < 50 %}LOW STOCK{% else %}OK{% endif %}
+            </span>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="5" style="padding: 20px; text-align: center; color: var(--text-3);">No inventory loaded.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

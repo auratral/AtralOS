@@ -1,0 +1,40 @@
+<div class="page-header" style="margin-bottom: 24px;">
+  <h2>Doctor Clinic Workstation</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Consultation queue and active SOAP charting</p>
+</div>
+
+<div class="glass-card">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Token</th>
+        <th>UHID</th>
+        <th>Patient Name</th>
+        <th>Appointment Time</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for appt in appointments %}
+        <tr>
+          <td class="text-bold" style="color: var(--primary);">#{{ appt.token }}</td>
+          <td class="text-muted" style="font-family: monospace;">{{ appt.patient_id }}</td>
+          <td class="text-bold">{{ appt.patient_name }}</td>
+          <td style="color: var(--text-2);">{{ appt.time }}</td>
+          <td>
+            <button class="glass-btn glass-btn-primary" 
+                    style="padding: 4px 10px; font-size: 0.75rem;"
+                    hx-get="/dashboard/panel?role=doctor&panel=consult&appt_id={{ appt.id }}"
+                    hx-target="#main-panel-content">
+              Start Consult
+            </button>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="5" style="padding: 20px; text-align: center; color: var(--text-3);">No active patients in consultation queue.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

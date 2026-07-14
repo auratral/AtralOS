@@ -1,0 +1,48 @@
+<div class="page-header" style="margin-bottom: 20px;">
+  <h2>NRS-2002 Nutritional Screening</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Evaluate patient nutritional risk factors: BMI, weight loss, food intake, and severity of illness</p>
+</div>
+
+<div class="glass-card" style="padding: 20px; max-width: 600px;">
+  <h3 class="form-title" style="margin-top: 0; margin-bottom: 15px;">NRS-2002 Evaluation</h3>
+  
+  <form hx-post="/api/v1/diet/screening" hx-target="#screening-message" hx-swap="innerHTML">
+    <div class="form-group" style="margin-bottom: 15px;">
+      <label>Patient ID / UHID *</label>
+      <input type="text" name="patient_id" required placeholder="AURA-2026-0001" style="width: 100%; box-sizing: border-box;">
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+      <div class="form-group">
+        <label>Nutritional Status Score (0-3) *</label>
+        <select name="status_score" style="width: 100%; box-sizing: border-box;">
+          <option value="0">0 - Normal status</option>
+          <option value="1">1 - Mild impairment (wt loss >5% in 3 mo)</option>
+          <option value="2">2 - Moderate impairment (wt loss >5% in 2 mo)</option>
+          <option value="3">3 - Severe impairment (wt loss >5% in 1 mo)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Severity of Illness Score (0-3) *</label>
+        <select name="illness_score" style="width: 100%; box-sizing: border-box;">
+          <option value="0">0 - Normal requirement</option>
+          <option value="1">1 - Mild (e.g. hip fracture, chronic illness)</option>
+          <option value="2">2 - Moderate (e.g. major abdominal surgery, stroke)</option>
+          <option value="3">3 - Severe (e.g. head injury, transplant, ICU)</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="form-group" style="margin-bottom: 15px;">
+      <label>Patient Age >= 70 Years?</label>
+      <select name="age_score" style="width: 100%; box-sizing: border-box;">
+        <option value="0">No (Add 0 points)</option>
+        <option value="1">Yes (Add 1 point to total)</option>
+      </select>
+    </div>
+    
+    <button type="submit" class="btn-login" style="width: 100%;">Record Nutritional Screening</button>
+  </form>
+  
+  <div id="screening-message"></div>
+</div>

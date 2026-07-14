@@ -1,0 +1,35 @@
+<div class="page-header" style="margin-bottom: 20px;">
+  <h2>Dietetics & Meal Orders</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Daily meal plans, patient preferences, and tray distribution logs</p>
+</div>
+
+<div class="glass-card" style="padding: 16px;">
+  <table class="data-table" style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Patient Name</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Diet Type</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Preference</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Breakfast</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Lunch</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Dinner</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ord in orders %}
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 10px 12px; font-weight: 500; color: var(--text-1);">{{ ord.patient_name }}</td>
+          <td style="padding: 10px 12px; color: var(--text-2);">{{ ord.diet_type }}</td>
+          <td style="padding: 10px 12px; color: var(--text-2);">{{ ord.preference }}</td>
+          <td style="padding: 10px 12px; color: var(--text-2);">{{ ord.breakfast }}</td>
+          <td style="padding: 10px 12px; color: var(--text-2);">{{ ord.lunch }}</td>
+          <td style="padding: 10px 12px; color: var(--text-2);">{{ ord.dinner }}</td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="6" style="padding: 20px; text-align: center; color: var(--text-3);">No active dietary orders.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

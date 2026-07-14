@@ -1,0 +1,118 @@
+<div class="page-header" style="margin-bottom: 24px;">
+  <div style="display: flex; flex-direction: column;">
+    <h2 style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--text-1); margin: 0;">System Settings</h2>
+    <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Register and manage hospital staff accounts, departments, and active licenses</p>
+  </div>
+</div>
+
+<div class="workspace-grid">
+  
+  <!-- Left Column: Staff Registration Form -->
+  <div class="glass-card">
+    <h3 class="form-title" style="margin-top: 0; margin-bottom: 15px;">Register New Staff Account</h3>
+    
+    <form hx-post="/api/v1/admin/register-staff" hx-target="#registration-message" hx-swap="innerHTML" @submit="this.reset()">
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" name="name" required placeholder="Dr. Sarah Connor" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Email Address *</label>
+          <input type="email" name="email" required placeholder="sarah@atral.os" style="width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" name="password" required placeholder="••••••••" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" name="phone" placeholder="+91 98765 43210" style="width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Staff Role *</label>
+          <select name="role" required style="width: 100%; box-sizing: border-box;">
+            <option value="doctor">Consultant Doctor</option>
+            <option value="nursing">Nurse / Attender</option>
+            <option value="radiology">Radiologist (RIS)</option>
+            <option value="lab">Lab Technician (LIS)</option>
+            <option value="pharmacy">Pharmacist</option>
+            <option value="finance">Billing & Finance Officer</option>
+            <option value="emergency">Emergency Crew / EMT</option>
+            <option value="icu">ICU Intensivist</option>
+            <option value="ot">Surgeon / OT Staff</option>
+            <option value="bloodbank">Blood Bank Officer</option>
+            <option value="diet">Dietitian / Kitchen Staff</option>
+            <option value="transport">Ambulance Fleet Driver</option>
+            <option value="reception">Receptionist / Front Desk</option>
+            <option value="admin">System Administrator</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Assigned Department *</label>
+          <select name="department_id" required style="width: 100%; box-sizing: border-box;">
+            {% for dept in departments %}
+              <option value="{{ dept.id }}">{{ dept.name }} ({{ dept.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Professional License No.</label>
+          <input type="text" name="license" placeholder="MCI-2026-987" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Operational Shift</label>
+          <select name="shift" style="width: 100%; box-sizing: border-box;">
+            <option>Morning</option>
+            <option>Afternoon</option>
+            <option>Night</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Qualifications</label>
+          <input type="text" name="qualification" placeholder="MBBS, MD" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Specialization</label>
+          <input type="text" name="specialization" placeholder="Cardiology" style="width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+      
+      <div class="form-group" style="margin-top: 12px;">
+        <label>Work Days</label>
+        <input type="text" name="work_days" value="Mon,Tue,Wed,Thu,Fri" placeholder="Mon,Tue,Wed..." style="width: 100%; box-sizing: border-box;">
+      </div>
+      
+      <button type="submit" class="btn-login" style="width: 100%; margin-top: 18px;">Register & Add to Staff Directory</button>
+    </form>
+    
+    <div id="registration-message" style="margin-top: 12px;"></div>
+  </div>
+  
+  <!-- Right Column: Staff Directory Table -->
+  <div class="glass-card" style="display: flex; flex-direction: column;">
+    <h3 class="form-title" style="margin-top: 0; margin-bottom: 15px;">Active Staff Directory</h3>
+    
+    <!-- Table loads here asynchronously -->
+    <div id="staff-table-container"
+         hx-get="/api/v1/admin/staff-table"
+         hx-trigger="load, refresh-staff-list from:body">
+      <div style="text-align: center; padding: 40px; color: var(--text-3);">
+        Loading Staff Directory...
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,115 @@
+<div class="page-header" style="margin-bottom: 20px;">
+  <h2>Reception OPD Queue Monitor</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Live patient consultations waitlist and real-time doctor workloads</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 3fr 2fr; gap: 20px; align-items: start;">
+  
+  <!-- Left Column: OPD Waitlist -->
+  <div class="glass-card" style="padding: 16px;">
+    <h3 style="margin: 0 0 12px 0; color: var(--text-1); font-size: 1rem;">Live OPD Waitlist</h3>
+    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Token</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Patient Name</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Assigned Doctor</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Time</th>
+          <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for appt in appointments %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 10px 12px; font-weight: 600; color: var(--primary);">#{{ appt.token }}</td>
+            <td style="padding: 10px 12px; font-weight: 700; color: var(--text-1);">{{ appt.patient_name }}</td>
+            <td style="padding: 10px 12px; font-weight: 500; color: var(--text-2);">{{ appt.doctor_name }}</td>
+            <td style="padding: 10px 12px; color: var(--text-3); font-size: 0.78rem;">{{ appt.time }}</td>
+            <td style="padding: 10px 12px;">
+              <span class="status-indicator {% if appt.status == 'Checked In' %}status-active{% else %}status-arrived{% endif %}" style="font-size: 0.65rem;">
+                {{ appt.status }}
+              </span>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" style="padding: 20px; text-align: center; color: var(--text-3);">No active patients in OPD queue.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Right Column: Doctor workloads -->
+  <div class="glass-card" style="padding: 16px;" 
+       x-data="{ 
+         doctorSearch: '', 
+         deptFilter: '',
+         doctors: [
+           {% for doc in doctor_workloads %}
+             {
+               id: '{{ doc.id }}',
+               name: '{{ doc.name }}',
+               specialty: '{{ doc.specialty }}',
+               queue_size: {{ doc.queue_size }},
+               busy_status: '{{ doc.busy_status }}',
+               busy_class: '{{ doc.busy_class }}'
+             },
+           {% endfor %}
+         ],
+         get uniqueSpecialties() {
+           let depts = new Set();
+           this.doctors.forEach(d => depts.add(d.specialty));
+           return Array.from(depts);
+         },
+         get filteredDoctors() {
+           return this.doctors.filter(doc => {
+             let matchesSearch = doc.name.toLowerCase().includes(this.doctorSearch.toLowerCase());
+             let matchesDept = this.deptFilter === '' || doc.specialty.toLowerCase() === this.deptFilter.toLowerCase();
+             return matchesSearch && matchesDept;
+           });
+         }
+       }">
+    <h3 style="margin: 0 0 4px 0; color: var(--text-1); font-size: 1rem;">Doctor Queue</h3>
+    <p style="color: var(--text-3); font-size: 0.75rem; margin: 0 0 12px 0;">Click doctor card to view their waiting patient queue</p>
+    
+    <!-- Search and Filter Controls -->
+    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+      <input type="text" x-model="doctorSearch" placeholder="🔍 Search doctor..." 
+             style="flex: 1.5; padding: 6px 10px; font-size: 0.78rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-white); color: var(--text-1);">
+      <select x-model="deptFilter" style="flex: 1; padding: 6px; font-size: 0.78rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-white); color: var(--text-2); cursor: pointer;">
+        <option value="">All Specialties</option>
+        <template x-for="spec in uniqueSpecialties" :key="spec">
+          <option :value="spec" x-text="spec"></option>
+        </template>
+      </select>
+    </div>
+    
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <template x-for="doc in filteredDoctors" :key="doc.id">
+        <div @click="modalOpen = true; htmx.ajax('GET', '/api/v1/reception/doctor-queue/' + doc.id, {target: '#glass-modal-container'})"
+             style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(163,177,198,0.05); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+             onmouseover="this.style.transform='translateY(-2px)';"
+             onmouseout="this.style.transform='none';">
+          <div>
+            <div style="font-weight: 700; color: var(--text-1); font-size: 0.85rem;" x-text="doc.name"></div>
+            <div style="font-size: 0.72rem; color: var(--text-3); font-weight: 600; text-transform: uppercase; margin-top: 2px;" x-text="doc.specialty"></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 700; font-size: 0.75rem; background: rgba(163,177,198,0.1); padding: 2px 8px; border-radius: 12px; color: var(--text-2);">
+              <span x-text="doc.queue_size"></span> active
+            </span>
+            <span class="status-indicator" :class="doc.busy_class" style="font-size: 0.65rem; padding: 2px 6px;" x-text="doc.busy_status"></span>
+          </div>
+        </div>
+      </template>
+      
+      <template x-if="filteredDoctors.length === 0">
+        <div style="text-align: center; padding: 20px; color: var(--text-3); font-size: 0.8rem;">
+          No active doctors match the criteria.
+        </div>
+      </template>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,88 @@
+<div class="glass-overlay-backdrop" @click="modalOpen = false"></div>
+<div class="glass-overlay-content">
+  <div class="glass-overlay-header">
+    <div style="display: flex; flex-direction: column;">
+      <h2>{{ department.name }}</h2>
+      <span style="font-size: 0.72rem; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">
+        {{ department.code }} Operations Overview
+      </span>
+    </div>
+    <button class="glass-overlay-close" @click="modalOpen = false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  
+  <div class="glass-overlay-body">
+    
+    <!-- Stats Section -->
+    <div class="overview-section">
+      <div class="overview-section-title">Key Indicators</div>
+      <div class="overview-stat-grid">
+        <div class="overview-stat-item">
+          <div class="overview-stat-value">{{ staff_count }}</div>
+          <div class="overview-stat-label">Assigned Staff</div>
+        </div>
+        {% if department.code == 'ER' %}
+          <div class="overview-stat-item">
+            <div class="overview-stat-value">{{ active_cases }}</div>
+            <div class="overview-stat-label">Active Emergencies</div>
+          </div>
+        {% elif department.code == 'ICU' %}
+          <div class="overview-stat-item">
+            <div class="overview-stat-value">{{ active_cases }}</div>
+            <div class="overview-stat-label">ICU Admissions</div>
+          </div>
+        {% elif department.code == 'OT' %}
+          <div class="overview-stat-item">
+            <div class="overview-stat-value">{{ active_cases }}</div>
+            <div class="overview-stat-label">Scheduled Surgeries</div>
+          </div>
+        {% elif department.code == 'LAB' or department.code == 'RAD' %}
+          <div class="overview-stat-item">
+            <div class="overview-stat-value">{{ active_cases }}</div>
+            <div class="overview-stat-label">Pending Panels</div>
+          </div>
+        {% elif department.code == 'FIN' %}
+          <div class="overview-stat-item">
+            <div class="overview-stat-value">{{ active_cases }}</div>
+            <div class="overview-stat-label">Unpaid Invoices</div>
+          </div>
+        {% else %}
+          <div class="overview-stat-item">
+            <div class="overview-stat-value">{{ active_cases }}</div>
+            <div class="overview-stat-label">Total Transactions</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    
+    <!-- Assigned Staff List -->
+    <div class="overview-section" style="margin-top: 24px;">
+      <div class="overview-section-title">Assigned Medical Officers & Staff</div>
+      <div class="overview-staff-grid" style="max-height: 240px; overflow-y: auto; gap: 10px; padding: 4px;">
+        {% for member in staff_members %}
+          <div class="overview-staff-card">
+            <div class="overview-staff-avatar">
+              {{ member.name[:2] | upper }}
+            </div>
+            <div style="flex: 1;">
+              <div class="overview-staff-name">{{ member.name }}</div>
+              <div class="overview-staff-role">{{ member.role | capitalize }} · {{ member.shift }} Shift</div>
+            </div>
+            <span class="status-indicator {% if member.status == 'Active' %}status-active{% else %}status-canceled{% endif %}" style="font-size: 0.6rem;">
+              {{ member.status }}
+            </span>
+          </div>
+        {% else %}
+          <div style="text-align: center; padding: 20px; grid-column: span 2; color: var(--text-3); font-size: 0.8rem;">
+            No staff currently assigned to this department.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    
+  </div>
+</div>

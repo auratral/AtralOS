@@ -1,0 +1,63 @@
+<div class="table-wrapper" style="max-height: 480px; overflow-y: auto;">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Device ID</th>
+        <th>Device Name</th>
+        <th>Type</th>
+        <th>Department & Location</th>
+        <th>Next Service</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for dev in devices %}
+        <tr>
+          <td style="font-family: monospace; font-size: 0.72rem; font-weight: 600; color: var(--text-2);">{{ dev.id }}</td>
+          <td>
+            <div style="font-weight: 700; color: var(--text-1);">{{ dev.name }}</div>
+            <div style="font-size: 0.65rem; color: var(--text-3); font-family: monospace;">S/N: {{ dev.serial_number }}</div>
+          </td>
+          <td>
+            <span class="role-badge" style="font-size: 0.65rem; padding: 2px 6px;">{{ dev.type | upper }}</span>
+          </td>
+          <td>
+            <div style="font-weight: 600; color: var(--primary);">{{ dev.department }}</div>
+            <div style="font-size: 0.68rem; color: var(--text-3);">{{ dev.location }}</div>
+          </td>
+          <td>
+            <span style="font-size: 0.72rem; color: var(--text-2); font-weight: 500;">{{ dev.maintenance_due }}</span>
+          </td>
+          <td>
+            <span class="status-indicator {% if dev.status == 'Active' %}status-active{% elif dev.status == 'Maintenance' %}status-arrived{% else %}status-canceled{% endif %}">
+              {{ dev.status }}
+            </span>
+          </td>
+          <td>
+            <div style="display: flex; gap: 6px;">
+              <button class="glass-btn" 
+                      style="padding: 4px 8px; font-size: 0.7rem; color: var(--primary); border-color: var(--primary);"
+                      hx-get="/api/v1/admin/edit-device-modal/{{ dev.id }}"
+                      hx-target="#glass-modal-container"
+                      @click="modalOpen = true">
+                Edit
+              </button>
+              <button class="glass-btn glass-btn-danger" 
+                      style="padding: 4px 8px; font-size: 0.7rem;"
+                      hx-delete="/api/v1/admin/device/{{ dev.id }}"
+                      hx-confirm="Are you sure you want to delete {{ dev.name }}?"
+                      hx-target="#device-registration-message">
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="7" style="padding: 20px; text-align: center; color: var(--text-3);">No devices registered in asset registry.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,48 @@
+<div class="page-header" style="margin-bottom: 20px;">
+  <h2>Pharmacy Dispensing Queue</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Pending drug prescriptions and stock verification</p>
+</div>
+
+<div class="glass-card" style="padding: 16px;" 
+     hx-get="/dashboard/panel?role=pharmacy&panel=queue" 
+     hx-trigger="refresh-pharmacy-list from:body" 
+     hx-target="#main-panel-content">
+  <table class="data-table" style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Rx ID</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Patient Name</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Prescribed By</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Medicines</th>
+        <th style="padding: 8px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-2); font-weight: 600;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rx in prescriptions %}
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 10px 12px; font-weight: 600; color: var(--text-1); font-family: monospace;">{{ rx.id }}</td>
+          <td style="padding: 10px 12px; font-weight: 700; color: var(--primary);">{{ rx.patient_name }}</td>
+          <td style="padding: 10px 12px; color: var(--text-2); font-weight: 500;">{{ rx.doctor_name }}</td>
+          <td style="padding: 10px 12px; color: var(--text-2); font-size: 0.8rem; max-width: 300px; line-height: 1.5;">
+            {% for med in rx.medicines %}
+              • {{ med }}<br/>
+            {% endfor %}
+          </td>
+          <td style="padding: 10px 12px;">
+            <button class="glass-btn glass-btn-primary" 
+                    style="padding: 4px 10px; font-size: 0.75rem;"
+                    hx-post="/api/v1/pharmacy/dispense/{{ rx.id }}"
+                    hx-target="#pharmacy-action-message-{{ rx.id }}">
+              Dispense Drugs
+            </button>
+            <div id="pharmacy-action-message-{{ rx.id }}" style="margin-top: 4px;"></div>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="5" style="padding: 20px; text-align: center; color: var(--text-3);">No pending prescriptions to dispense.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

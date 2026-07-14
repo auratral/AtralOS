@@ -1,0 +1,121 @@
+<div class="glass-overlay-backdrop" @click="modalOpen = false"></div>
+<div class="glass-overlay-content" style="max-width: 600px;">
+  <div class="glass-overlay-header">
+    <div style="display: flex; flex-direction: column;">
+      <h2>Edit Staff Profile</h2>
+      <span style="font-size: 0.72rem; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+        Profile Settings for {{ staff.id }}
+      </span>
+    </div>
+    <button class="glass-overlay-close" @click="modalOpen = false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  
+  <div class="glass-overlay-body">
+    <form hx-post="/api/v1/admin/edit-staff/{{ staff.id }}" hx-target="#edit-message" hx-swap="innerHTML">
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" name="name" required value="{{ staff.name }}" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Email Address *</label>
+          <input type="email" name="email" required value="{{ staff.email }}" style="width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>New Password (leave blank to keep current)</label>
+          <input type="password" name="password" placeholder="••••••••" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" name="phone" value="{{ staff.phone or '' }}" style="width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Staff Role *</label>
+          <select name="role" required style="width: 100%; box-sizing: border-box;">
+            <option value="doctor" {% if staff.role == 'doctor' %}selected{% endif %}>Consultant Doctor</option>
+            <option value="nursing" {% if staff.role == 'nursing' %}selected{% endif %}>Nurse / Attender</option>
+            <option value="radiology" {% if staff.role == 'radiology' %}selected{% endif %}>Radiologist (RIS)</option>
+            <option value="lab" {% if staff.role == 'lab' %}selected{% endif %}>Lab Technician (LIS)</option>
+            <option value="pharmacy" {% if staff.role == 'pharmacy' %}selected{% endif %}>Pharmacist</option>
+            <option value="finance" {% if staff.role == 'finance' %}selected{% endif %}>Billing & Finance Officer</option>
+            <option value="emergency" {% if staff.role == 'emergency' %}selected{% endif %}>Emergency Crew / EMT</option>
+            <option value="icu" {% if staff.role == 'icu' %}selected{% endif %}>ICU Intensivist</option>
+            <option value="ot" {% if staff.role == 'ot' %}selected{% endif %}>Surgeon / OT Staff</option>
+            <option value="bloodbank" {% if staff.role == 'bloodbank' %}selected{% endif %}>Blood Bank Officer</option>
+            <option value="diet" {% if staff.role == 'diet' %}selected{% endif %}>Dietitian / Kitchen Staff</option>
+            <option value="transport" {% if staff.role == 'transport' %}selected{% endif %}>Ambulance Fleet Driver</option>
+            <option value="reception" {% if staff.role == 'reception' %}selected{% endif %}>Receptionist / Front Desk</option>
+            <option value="admin" {% if staff.role == 'admin' %}selected{% endif %}>System Administrator</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Assigned Department *</label>
+          <select name="department_id" required style="width: 100%; box-sizing: border-box;">
+            {% for dept in departments %}
+              <option value="{{ dept.id }}" {% if staff.department_id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Professional License No.</label>
+          <input type="text" name="license" value="{{ staff.license or '' }}" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Account Status</label>
+          <select name="status" style="width: 100%; box-sizing: border-box;">
+            <option value="Active" {% if staff.status == 'Active' %}selected{% endif %}>Active</option>
+            <option value="Inactive" {% if staff.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Qualifications</label>
+          <input type="text" name="qualification" value="{{ staff.qualification or '' }}" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Specialization</label>
+          <input type="text" name="specialization" value="{{ staff.specialization or '' }}" style="width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Operational Shift</label>
+          <select name="shift" style="width: 100%; box-sizing: border-box;">
+            <option value="Morning" {% if staff.shift == 'Morning' %}selected{% endif %}>Morning</option>
+            <option value="Afternoon" {% if staff.shift == 'Afternoon' %}selected{% endif %}>Afternoon</option>
+            <option value="Night" {% if staff.shift == 'Night' %}selected{% endif %}>Night</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Work Days</label>
+          <input type="text" name="work_days" value="{{ staff.work_days }}" style="width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 14px;">
+        <button type="button" class="glass-btn glass-btn-secondary" @click="modalOpen = false">Cancel</button>
+        <button type="submit" class="glass-btn glass-btn-primary">Save Changes</button>
+      </div>
+    </form>
+    
+    <div id="edit-message" style="margin-top: 12px;"></div>
+  </div>
+</div>

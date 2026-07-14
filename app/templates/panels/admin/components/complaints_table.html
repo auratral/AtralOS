@@ -1,0 +1,57 @@
+<div class="table-wrapper" style="max-height: 520px; overflow-y: auto;">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Ticket ID</th>
+        <th>Title / Issue Summary</th>
+        <th>Priority</th>
+        <th>Reported By</th>
+        <th>Assigned To</th>
+        <th>Raised On</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for comp in complaints %}
+        <tr style="cursor: pointer;" 
+            hx-get="/api/v1/admin/complaint-detail-modal/{{ comp.id }}" 
+            hx-target="#glass-modal-container" 
+            @click="modalOpen = true">
+          <td style="font-family: monospace; font-size: 0.75rem; font-weight: 700; color: var(--primary);">{{ comp.id }}</td>
+          <td>
+            <div style="font-weight: 700; color: var(--text-1);">{{ comp.title }}</div>
+            <div style="font-size: 0.7rem; color: var(--text-3); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              {{ comp.description }}
+            </div>
+          </td>
+          <td>
+            <span class="status-indicator {% if comp.priority == 'Critical' or comp.priority == 'High' %}status-canceled{% elif comp.priority == 'Medium' %}status-arrived{% else %}status-active{% endif %}" style="font-size: 0.65rem;">
+              {{ comp.priority }}
+            </span>
+          </td>
+          <td>
+            <div style="font-weight: 600; color: var(--text-1);">{{ comp.reported_by }}</div>
+            <div style="font-size: 0.68rem; color: var(--text-3);">{{ comp.department }}</div>
+          </td>
+          <td>
+            <span class="role-badge" style="font-size: 0.68rem; padding: 2px 6px; background: rgba(109,40,217,0.05); border-color: rgba(109,40,217,0.2);">
+              {{ comp.assigned_to | default('Unassigned', true) }}
+            </span>
+          </td>
+          <td style="color: var(--text-2); font-size: 0.72rem;">
+            {{ comp.created_at.strftime('%Y-%m-%d %H:%M') if comp.created_at else 'N/A' }}
+          </td>
+          <td>
+            <span class="status-indicator {% if comp.status == 'Open' %}status-arrived{% elif comp.status == 'Resolved' or comp.status == 'Closed' %}status-done{% else %}status-booked{% endif %}">
+              {{ comp.status }}
+            </span>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="7" style="padding: 20px; text-align: center; color: var(--text-3);">No helpdesk tickets reported in system.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

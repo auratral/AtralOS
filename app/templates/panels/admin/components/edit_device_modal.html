@@ -1,0 +1,94 @@
+<div class="glass-overlay-backdrop" @click="modalOpen = false"></div>
+<div class="glass-overlay-content" style="max-width: 600px;">
+  <div class="glass-overlay-header">
+    <div style="display: flex; flex-direction: column;">
+      <h2>Edit Device Info</h2>
+      <span style="font-size: 0.72rem; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+        Settings for Device ID {{ device.id }}
+      </span>
+    </div>
+    <button class="glass-overlay-close" @click="modalOpen = false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  
+  <div class="glass-overlay-body">
+    <form hx-post="/api/v1/admin/edit-device/{{ device.id }}" hx-target="#edit-device-message" hx-swap="innerHTML">
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Device Name *</label>
+          <input type="text" name="name" required value="{{ device.name }}" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Device Type *</label>
+          <select name="type" required style="width: 100%; box-sizing: border-box;">
+            <option value="Monitoring" {% if device.type == 'Monitoring' %}selected{% endif %}>Monitoring</option>
+            <option value="Life Support" {% if device.type == 'Life Support' %}selected{% endif %}>Life Support</option>
+            <option value="Diagnostic" {% if device.type == 'Diagnostic' %}selected{% endif %}>Diagnostic</option>
+            <option value="Therapeutic" {% if device.type == 'Therapeutic' %}selected{% endif %}>Therapeutic</option>
+            <option value="Surgical" {% if device.type == 'Surgical' %}selected{% endif %}>Surgical</option>
+            <option value="Lab Analyzer" {% if device.type == 'Lab Analyzer' %}selected{% endif %}>Lab Analyzer</option>
+            <option value="Imaging" {% if device.type == 'Imaging' %}selected{% endif %}>Imaging</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Assigned Department *</label>
+          <select name="department" required style="width: 100%; box-sizing: border-box;">
+            {% for dept in departments %}
+              <option value="{{ dept.id }}" {% if device.department == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Physical Location *</label>
+          <input type="text" name="location" required value="{{ device.location }}" style="width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Serial Number *</label>
+          <input type="text" name="serial_number" required value="{{ device.serial_number }}" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Device Status</label>
+          <select name="status" style="width: 100%; box-sizing: border-box;">
+            <option value="Active" {% if device.status == 'Active' %}selected{% endif %}>Active / Operational</option>
+            <option value="Maintenance" {% if device.status == 'Maintenance' %}selected{% endif %}>Under Maintenance</option>
+            <option value="Decommissioned" {% if device.status == 'Decommissioned' %}selected{% endif %}>Decommissioned</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>Last Service Date *</label>
+          <input type="date" name="last_service_date" required value="{{ device.last_service_date }}" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+          <label>Maintenance Due Date *</label>
+          <input type="date" name="maintenance_due" required value="{{ device.maintenance_due }}" style="width: 100%; box-sizing: border-box;">
+        </div>
+      </div>
+      
+      <div class="form-group" style="margin-top: 12px;">
+        <label>Operational Notes</label>
+        <textarea name="notes" style="width: 100%; box-sizing: border-box;">{{ device.notes or '' }}</textarea>
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 14px;">
+        <button type="button" class="glass-btn glass-btn-secondary" @click="modalOpen = false">Cancel</button>
+        <button type="submit" class="glass-btn glass-btn-primary">Save Changes</button>
+      </div>
+    </form>
+    
+    <div id="edit-device-message" style="margin-top: 12px;"></div>
+  </div>
+</div>

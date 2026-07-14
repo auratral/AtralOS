@@ -1,0 +1,66 @@
+<div class="page-header" style="margin-bottom: 20px;">
+  <h2>Post-Op Recovery & PACU</h2>
+  <p style="color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0;">Evaluate Aldrete score parameters: Activity, Respiration, Circulation, Consciousness, O2 Saturation</p>
+</div>
+
+<div class="glass-card" style="padding: 20px; max-width: 600px;">
+  <h3 class="form-title" style="margin-top: 0; margin-bottom: 15px;">PACU Aldrete Scoring</h3>
+  
+  <form hx-post="/api/v1/ot/recovery" hx-target="#recovery-message" hx-swap="innerHTML">
+    <div class="form-group" style="margin-bottom: 15px;">
+      <label>Patient ID / UHID *</label>
+      <input type="text" name="patient_id" required placeholder="AURA-2026-0001" style="width: 100%; box-sizing: border-box;">
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+      <div class="form-group">
+        <label>Activity (0-2) *</label>
+        <select name="activity" style="width: 100%; box-sizing: border-box;">
+          <option value="2">2 - Moves 4 extremities voluntarily/on command</option>
+          <option value="1">1 - Moves 2 extremities voluntarily/on command</option>
+          <option value="0">0 - Able to move 0 extremities voluntarily/on command</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Respiration (0-2) *</label>
+        <select name="respiration" style="width: 100%; box-sizing: border-box;">
+          <option value="2">2 - Able to breathe deeply and cough freely</option>
+          <option value="1">1 - Dyspnea, shallow or limited breathing</option>
+          <option value="0">0 - Apneic</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+      <div class="form-group">
+        <label>Circulation (BP) (0-2) *</label>
+        <select name="circulation" style="width: 100%; box-sizing: border-box;">
+          <option value="2">2 - BP +/- 20% of pre-anesthetic level</option>
+          <option value="1">1 - BP +/- 20-50% of pre-anesthetic level</option>
+          <option value="0">0 - BP +/- 50% of pre-anesthetic level</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Consciousness (0-2) *</label>
+        <select name="consciousness" style="width: 100%; box-sizing: border-box;">
+          <option value="2">2 - Fully awake</option>
+          <option value="1">1 - Arousable on calling</option>
+          <option value="0">0 - Unresponsive</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="form-group" style="margin-bottom: 15px;">
+      <label>Oxygen Saturation (0-2) *</label>
+      <select name="oxygen" style="width: 100%; box-sizing: border-box;">
+        <option value="2">2 - SpO2 > 92% on room air</option>
+        <option value="1">1 - Needs O2 inhalation to maintain SpO2 > 90%</option>
+        <option value="0">0 - SpO2 < 90% even with O2 supplementation</option>
+      </select>
+    </div>
+    
+    <button type="submit" class="btn-login" style="width: 100%;">Record Aldrete Score & Log Recovery</button>
+  </form>
+  
+  <div id="recovery-message"></div>
+</div>

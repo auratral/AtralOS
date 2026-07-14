@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auratral HealthOS — Clinical EHR & ERP</title>
+  <link rel="stylesheet" href="/static/css/main.css?v=4">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Load HTMX and Alpine.js for interactivity -->
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body hx-headers='{"X-CSRF-Token": "csrf_token_placeholder"}' style="margin: 0; padding: 0; width: 100%;" x-data="{ modalOpen: false }" @close-modal.window="modalOpen = false">
+
+  <!-- ========== TOP NAVIGATION ========== -->
+  <nav class="topnav" id="topnav">
+    <div class="topnav-brand">
+      <div class="topnav-logo">A</div>
+      <div class="topnav-title-wrapper">
+        <span class="topnav-title">HealthOS</span>
+        <span class="topnav-sub">Auratral Dataspace</span>
+      </div>
+    </div>
+
+    <div class="topnav-search">
+      <input type="text" id="global-patient-search" placeholder="Search patients by Name, UHID, Mobile..." 
+             name="q" hx-get="/api/v1/patients/search" hx-trigger="keyup changed delay:300ms" hx-target="#global-search-results">
+      <div class="search-results-dropdown" id="global-search-results"></div>
+    </div>
+
+    <div class="topnav-actions">
+      <!-- Role Picker for Admins -->
+      {% if user.role == 'admin' %}
+        <select class="role-select" id="global-role-select" name="role" 
+                onchange="document.body.dispatchEvent(new CustomEvent('role-changed', {detail: {role: this.value}}))">
+          <option value="admin">Super Admin</option>
+          <option value="reception">Reception / Front Desk</option>
+          <option value="nursing">Nursing Station</option>
+          <option value="doctor">Doctor Station</option>
+          <option value="lab">Laboratory (LIS)</option>
+          <option value="radiology">Radiology (RIS)</option>
+          <option value="pharmacy">Pharmacy Inventory</option>
+          <option value="finance">Finance & Billing</option>
+          <option value="emergency">Emergency / Trauma</option>
+          <option value="icu">Intensive Care Unit</option>
+          <option value="ot">Operation Theatre</option>
+          <option value="bloodbank">Blood Bank</option>
+          <option value="diet">Diet & Nutrition</option>
+          <option value="transport">Ambulance Transport</option>
+        </select>
+      {% else %}
+        <span class="role-badge">{{ user.role | capitalize }}</span>
+        <input type="hidden" id="global-role-select" name="role" value="{{ user.role }}">
+      {% endif %}
+
+      <a href="/logout" class="btn-signout">Sign Out</a>
+    </div>
+  </nav>
+
+  <!-- ========== APP BODY WRAPPER ========== -->
+  <div class="app-layout">
+    
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <div id="sidebar-nav-menu"
+           hx-get="/dashboard/sidebar"
+           hx-trigger="role-changed from:body, load from:body"
+           hx-include="#global-role-select">
+        <!-- Sidebar items loaded via HTMX -->
+      </div>
+    </aside>
+
+    <!-- MAIN PANEL -->
+    <main class="main-content">
+      <div id="main-panel-content"
+           hx-get="/dashboard/panel"
+           hx-trigger="role-changed from:body, load from:body"
+           hx-include="#global-role-select">
+        <!-- Main role dashboard loaded via HTMX -->
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ========== LIQUID GLASS OVERLAY MODAL ========== -->
+  <div id="glass-modal-container" class="glass-overlay-modal" :class="{ 'open': modalOpen }"></div>
+
+</body>
+</html>
